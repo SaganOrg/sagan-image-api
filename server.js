@@ -149,7 +149,32 @@ function loadLogos() {
   return logos;
 }
 
+// Load fonts as base64
+function loadFonts() {
+  const fontsPath = path.join(__dirname, 'assets', 'fonts');
+  const fonts = {};
+
+  const fontFiles = {
+    'PPMori-SemiBold': 'PPMori-SemiBold.otf',
+    'PPMori-Regular': 'PPMori-Regular.otf',
+    'PPMori-Book': 'PPMori-Book.otf',
+    'PPNeueMontreal-Medium': 'PPNeueMontreal-Medium.otf'
+  };
+
+  for (const [name, file] of Object.entries(fontFiles)) {
+    try {
+      fonts[name] = fs.readFileSync(path.join(fontsPath, file)).toString('base64');
+      console.log(`Loaded font: ${name}`);
+    } catch (e) {
+      console.warn(`Font not found: ${file}`);
+    }
+  }
+
+  return fonts;
+}
+
 const LOGOS = loadLogos();
+const FONTS = loadFonts();
 
 // Main endpoint
 app.post('/generate', async (req, res) => {
@@ -217,6 +242,12 @@ app.post('/generate', async (req, res) => {
     html = html.replace(/\{\{logoBase64\}\}/g, LOGOS.dark || '');
     html = html.replace(/\{\{logoLightBase64\}\}/g, LOGOS.light || LOGOS.dark || '');
     html = html.replace(/\{\{logoBlueBase64\}\}/g, LOGOS.blue || LOGOS.dark || '');
+
+    // Replace fonts
+    html = html.replace(/\{\{fontPPMoriSemiBold\}\}/g, FONTS['PPMori-SemiBold'] || '');
+    html = html.replace(/\{\{fontPPMoriRegular\}\}/g, FONTS['PPMori-Regular'] || '');
+    html = html.replace(/\{\{fontPPMoriBook\}\}/g, FONTS['PPMori-Book'] || '');
+    html = html.replace(/\{\{fontPPNeueMontreal\}\}/g, FONTS['PPNeueMontreal-Medium'] || '');
 
     // Handle different templates
     if (selectedTemplate === 'multi-job' || selectedTemplate === 'search-style' || selectedTemplate === 'catalog-multi') {
