@@ -249,6 +249,22 @@ app.post('/generate', async (req, res) => {
     html = html.replace(/\{\{fontPPMoriBook\}\}/g, FONTS['PPMori-Book'] || '');
     html = html.replace(/\{\{fontPPNeueMontreal\}\}/g, FONTS['PPNeueMontreal-Medium'] || '');
 
+    // Replace dot colors
+    if (selectedDotStyle.length >= 5) {
+      html = html.replace(/\{\{dot1Color\}\}/g, selectedDotStyle[0]);
+      html = html.replace(/\{\{dot2Color\}\}/g, selectedDotStyle[1]);
+      html = html.replace(/\{\{dot3Color\}\}/g, selectedDotStyle[2]);
+      html = html.replace(/\{\{dot4Color\}\}/g, selectedDotStyle[3]);
+      html = html.replace(/\{\{dot5Color\}\}/g, selectedDotStyle[4]);
+    } else {
+      // If no dots (none style), use transparent
+      html = html.replace(/\{\{dot1Color\}\}/g, 'transparent');
+      html = html.replace(/\{\{dot2Color\}\}/g, 'transparent');
+      html = html.replace(/\{\{dot3Color\}\}/g, 'transparent');
+      html = html.replace(/\{\{dot4Color\}\}/g, 'transparent');
+      html = html.replace(/\{\{dot5Color\}\}/g, 'transparent');
+    }
+
     // Handle different templates
     if (selectedTemplate === 'multi-job' || selectedTemplate === 'search-style' || selectedTemplate === 'catalog-multi') {
       // Generate job items HTML
