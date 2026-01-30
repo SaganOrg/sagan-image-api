@@ -58,6 +58,80 @@ function randomChoice(arr) {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
+// Parse job description to extract fields
+function parseJobDescription(description) {
+  if (!description) return {};
+
+  const result = {};
+
+  // Extract Salary - various formats
+  const salaryPatterns = [
+    /Salary\s*(?:Range)?[:\s]*\$?([\d,]+)\s*[-–]\s*\$?([\d,]+)\s*(?:USD)?/i,
+    /Salary\s*(?:Range)?[:\s]*([\d,]+)\s*[-–]\s*([\d,]+)\s*USD/i,
+    /\$?([\d,]+)\s*[-–]\s*\$?([\d,]+)\s*(?:USD)?\s*\/\s*month/i,
+    /Earn up to \$?([\d,]+)/i
+  ];
+
+  for (const pattern of salaryPatterns) {
+    const match = description.match(pattern);
+    if (match) {
+      if (match[2]) {
+        result.salary = `$${match[1]} - $${match[2]}`;
+      } else {
+        result.salary = `$${match[1]}`;
+      }
+      break;
+    }
+  }
+
+  // Extract Location
+  const locationMatch = description.match(/Location[:\s]*([^\n]+)/i);
+  if (locationMatch) {
+    let loc = locationMatch[1].trim();
+    // Clean up common patterns
+    if (loc.toLowerCase().includes('remote')) {
+      result.location = 'Remote';
+    } else {
+      result.location = loc.split('-')[0].trim(); // Take first part before dash
+    }
+  }
+
+  // Extract Schedule
+  const schedulePatterns = [
+    /Work\s*Schedule[:\s]*([^\n]+)/i,
+    /Schedule[:\s]*([^\n]+)/i,
+    /Hours[:\s]*([^\n]+)/i
+  ];
+
+  for (const pattern of schedulePatterns) {
+    const match = description.match(pattern);
+    if (match) {
+      let sched = match[1].trim();
+      // Simplify schedule
+      if (sched.toLowerCase().includes('monday') && sched.toLowerCase().includes('friday')) {
+        const timeMatch = sched.match(/(\d{1,2}:\d{2}\s*(?:AM|PM)?)\s*[-–]\s*(\d{1,2}:\d{2}\s*(?:AM|PM)?)/i);
+        if (timeMatch) {
+          result.schedule = `M-F, ${timeMatch[1]} - ${timeMatch[2]}`;
+        } else {
+          result.schedule = 'Full-time, M-F';
+        }
+      } else {
+        result.schedule = sched.substring(0, 30); // Limit length
+      }
+      break;
+    }
+  }
+
+  // Extract Job Title from description if present
+  const titleMatch = description.match(/Job\s*Title[:\s]*([^\n]+)/i);
+  if (titleMatch) {
+    result.extractedTitle = titleMatch[1].trim();
+  }
+
+  console.log('Parsed description:', result);
+  return result;
+}
+
 // Load logos
 function loadLogos() {
   const assetsPath = path.join(__dirname, 'assets');
@@ -93,14 +167,17 @@ app.post('/generate', async (req, res) => {
   try {
     console.log('Received request:', JSON.stringify(req.body, null, 2));
 
+    // Parse description if provided
+    const parsed = parseJobDescription(req.body.description);
+
     const {
       // Single job fields
-      jobTitle = 'Job Title',
-      salary = '$1,000 - $2,000',
+      jobTitle = parsed.extractedTitle || 'Job Title',
+      salary = parsed.salary || '$1,000 - $2,000',
       responsibilities = [],
       qualifications = [],
-      location = 'Remote',
-      schedule = 'M-F, 9AM-5PM EST',
+      location = parsed.location || 'Remote',
+      schedule = parsed.schedule || 'Full-time',
       jobCode = '',
 
       // Multi job fields
