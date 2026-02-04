@@ -8,6 +8,9 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Serve static files from public folder
+app.use(express.static(path.join(__dirname, 'public')));
+
 // Available templates
 const TEMPLATES = ['catalog-1', 'catalog-2', 'catalog-3', 'catalog-multi', 'diagonal', 'spotlight', 'waves', 'modern-clean', 'split-screen', 'search-style', 'multi-job'];
 
@@ -175,6 +178,530 @@ function loadFonts() {
 
 const LOGOS = loadLogos();
 const FONTS = loadFonts();
+
+// Airtable configuration
+const AIRTABLE_API_KEY = process.env.AIRTABLE_API_KEY || '';
+const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID || '';
+const AIRTABLE_TABLE_NAME = process.env.AIRTABLE_TABLE_NAME || 'Jobs';
+
+// ============================================
+// API ENDPOINTS FOR FRONTEND
+// ============================================
+
+// Get jobs from Airtable
+app.get('/api/airtable/jobs', async (req, res) => {
+  try {
+    if (!AIRTABLE_API_KEY || !AIRTABLE_BASE_ID) {
+      // Return empty array if Airtable is not configured
+      console.log('Airtable not configured, returning empty jobs');
+      return res.json({ jobs: [], message: 'Airtable not configured' });
+    }
+
+    const response = await fetch(
+      `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(AIRTABLE_TABLE_NAME)}?sort[0][field]=Created&sort[0][direction]=desc`,
+      {
+        headers: {
+          'Authorization': `Bearer ${AIRTABLE_API_KEY}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error('Airtable API error');
+    }
+
+    const data = await response.json();
+
+    const jobs = data.records.map(record => ({
+      id: record.id,
+      title: record.fields['Job Title'] || record.fields['Name'] || 'Untitled',
+      jobCode: record.fields['Job Code'] || record.fields['Code'] || '',
+      salary: record.fields['Salary'] || record.fields['Salary Range'] || '',
+      location: record.fields['Location'] || 'Remote',
+      schedule: record.fields['Schedule'] || record.fields['Work Schedule'] || 'Full-time',
+      responsibilities: record.fields['Responsibilities'] ?
+        record.fields['Responsibilities'].split('\n').filter(r => r.trim()) : [],
+      qualifications: record.fields['Qualifications'] ?
+        record.fields['Qualifications'].split('\n').filter(q => q.trim()) : [],
+      description: record.fields['Description'] || record.fields['Job Description'] || ''
+    }));
+
+    res.json({ jobs });
+  } catch (error) {
+    console.error('Airtable error:', error.message);
+    res.json({ jobs: [], error: error.message });
+  }
+});
+
+// Generate carousel images (cover + details)
+app.post('/generate-carousel', async (req, res) => {
+  let browser = null;
+
+  try {
+    console.log('Generating carousel...');
+    const { jobs = [], dotStyle = 'default' } = req.body;
+
+    if (jobs.length === 0) {
+      return res.status(400).json({ error: 'No jobs provided' });
+    }
+
+    const selectedDotStyle = DOT_STYLES[dotStyle] || DOT_STYLES.default;
+    const images = { cover: null, details: [] };
+
+    browser = await chromium.launch({ headless: true });
+    const page = await browser.newPage();
+    await page.setViewportSize({ width: 1080, height: 1080 });
+
+    // Generate COVER image
+    const coverHtml = generateCarouselCoverHTML(jobs, selectedDotStyle);
+    await page.setContent(coverHtml, { waitUntil: 'load' });
+    await page.waitForTimeout(500);
+    const coverBuffer = await page.screenshot({ type: 'png' });
+    images.cover = coverBuffer.toString('base64');
+    console.log('Cover generated');
+
+    // Generate DETAIL images for each job
+    for (let i = 0; i < jobs.length; i++) {
+      const job = jobs[i];
+      const detailHtml = generateCarouselDetailHTML(job, selectedDotStyle);
+      await page.setContent(detailHtml, { waitUntil: 'load' });
+      await page.waitForTimeout(500);
+      const detailBuffer = await page.screenshot({ type: 'png' });
+      images.details.push(detailBuffer.toString('base64'));
+      console.log(`Detail ${i + 1} generated`);
+    }
+
+    await browser.close();
+    browser = null;
+
+    res.json({
+      success: true,
+      count: 1 + images.details.length,
+      images
+    });
+
+  } catch (error) {
+    console.error('Carousel error:', error.message);
+    if (browser) await browser.close();
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Template preview endpoint
+app.get('/api/template-preview/:templateId', async (req, res) => {
+  let browser = null;
+
+  try {
+    const { templateId } = req.params;
+    const templatePath = path.join(__dirname, 'templates', `${templateId}.html`);
+
+    if (!fs.existsSync(templatePath)) {
+      return res.status(404).json({ error: 'Template not found' });
+    }
+
+    let html = fs.readFileSync(templatePath, 'utf8');
+
+    // Apply sample data
+    html = html.replace(/\{\{primary\}\}/g, THEME.primary);
+    html = html.replace(/\{\{secondary\}\}/g, THEME.secondary);
+    html = html.replace(/\{\{background\}\}/g, THEME.background);
+    html = html.replace(/\{\{accent\}\}/g, THEME.accent);
+    html = html.replace(/\{\{logoBase64\}\}/g, LOGOS.dark || '');
+    html = html.replace(/\{\{logoLightBase64\}\}/g, LOGOS.light || '');
+    html = html.replace(/\{\{logoBlueBase64\}\}/g, LOGOS.blue || '');
+    html = html.replace(/\{\{fontPPMoriSemiBold\}\}/g, FONTS['PPMori-SemiBold'] || '');
+    html = html.replace(/\{\{fontPPMoriRegular\}\}/g, FONTS['PPMori-Regular'] || '');
+    html = html.replace(/\{\{fontPPMoriBook\}\}/g, FONTS['PPMori-Book'] || '');
+    html = html.replace(/\{\{fontPPNeueMontreal\}\}/g, FONTS['PPNeueMontreal-Medium'] || '');
+
+    // Dot colors
+    const defaultDots = DOT_STYLES.default;
+    html = html.replace(/\{\{dot1Color\}\}/g, defaultDots[0] || 'transparent');
+    html = html.replace(/\{\{dot2Color\}\}/g, defaultDots[1] || 'transparent');
+    html = html.replace(/\{\{dot3Color\}\}/g, defaultDots[2] || 'transparent');
+    html = html.replace(/\{\{dot4Color\}\}/g, defaultDots[3] || 'transparent');
+    html = html.replace(/\{\{dot5Color\}\}/g, defaultDots[4] || 'transparent');
+
+    // Sample job data
+    html = html.replace(/\{\{jobTitle\}\}/g, 'Marketing Manager');
+    html = html.replace(/\{\{salary\}\}/g, '$2,500 - $3,500');
+    html = html.replace(/\{\{location\}\}/g, 'Remote');
+    html = html.replace(/\{\{schedule\}\}/g, 'Full-time');
+    html = html.replace(/\{\{jobCode\}\}/g, 'HR12345');
+    html = html.replace(/\{\{responsibilities\}\}/g, '<li>Lead campaigns</li><li>Manage team</li>');
+    html = html.replace(/\{\{qualifications\}\}/g, '<li>5+ years experience</li><li>MBA preferred</li>');
+    html = html.replace(/\{\{requirementPills\}\}/g, '<div class="req-pill">Marketing</div><div class="req-pill">Leadership</div>');
+    html = html.replace(/\{\{keyPoints\}\}/g, '<div class="point"><div class="point-dot"></div>Great opportunity</div>');
+    html = html.replace(/\{\{personPhotoUrl\}\}/g, 'https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=400&h=500&fit=crop');
+    html = html.replace(/\{\{responsibilitiesList\}\}/g, '<li>Lead campaigns</li>');
+    html = html.replace(/\{\{qualificationsList\}\}/g, '<li>Experience required</li>');
+    html = html.replace(/\{\{jobItems\}\}/g, '');
+
+    browser = await chromium.launch({ headless: true });
+    const page = await browser.newPage();
+    await page.setViewportSize({ width: 1080, height: 1080 });
+    await page.setContent(html, { waitUntil: 'load' });
+    await page.waitForTimeout(500);
+
+    const imageBuffer = await page.screenshot({ type: 'png' });
+    await browser.close();
+
+    res.set('Content-Type', 'image/png');
+    res.set('Cache-Control', 'public, max-age=3600');
+    res.send(imageBuffer);
+
+  } catch (error) {
+    console.error('Preview error:', error.message);
+    if (browser) await browser.close();
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// AI Template generation (placeholder - requires Claude API)
+app.post('/api/ai-template', async (req, res) => {
+  res.status(501).json({
+    error: 'AI template generation not yet implemented',
+    message: 'This feature requires Claude API integration'
+  });
+});
+
+// ============================================
+// HELPER FUNCTIONS FOR CAROUSEL
+// ============================================
+
+function generateCarouselCoverHTML(jobs, dotColors) {
+  const jobItems = jobs.map((job, index) => `
+    <div class="job-pill">
+      <div class="job-pill-title">${job.title || 'Job Title'}</div>
+      <div class="job-pill-salary">Salary Range: ${job.salary || '$1,000 - $2,000'}</div>
+    </div>
+  `).join('');
+
+  const dotsHTML = dotColors.length > 0 ? dotColors.map((color, i) =>
+    `<div class="dot" style="background: ${color};"></div>`
+  ).join('') : '';
+
+  return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    @font-face {
+      font-family: 'PP Mori';
+      src: url(data:font/otf;base64,${FONTS['PPMori-SemiBold'] || ''}) format('opentype');
+      font-weight: 600;
+    }
+    @font-face {
+      font-family: 'PP Neue Montreal';
+      src: url(data:font/otf;base64,${FONTS['PPNeueMontreal-Medium'] || ''}) format('opentype');
+      font-weight: 500;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      width: 1080px;
+      height: 1080px;
+      font-family: 'PP Neue Montreal', sans-serif;
+      background: #ede9e5;
+    }
+    .poster {
+      width: 1080px;
+      height: 1080px;
+      padding: 60px;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 40px;
+    }
+    .title {
+      font-family: 'PP Mori', sans-serif;
+    }
+    .title .we-are {
+      font-size: 48px;
+      font-weight: 400;
+      color: #093a3e;
+      display: block;
+    }
+    .title .hiring {
+      font-size: 72px;
+      font-weight: 600;
+      color: #093a3e;
+      display: block;
+    }
+    .logo {
+      width: 140px;
+      height: auto;
+    }
+    .jobs-list {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin-bottom: 40px;
+    }
+    .job-pill {
+      background: white;
+      border: 2px solid #093a3e;
+      border-radius: 60px;
+      padding: 20px 40px;
+      text-align: center;
+    }
+    .job-pill-title {
+      font-family: 'PP Mori', sans-serif;
+      font-size: 24px;
+      font-weight: 600;
+      color: #093a3e;
+      margin-bottom: 4px;
+    }
+    .job-pill-salary {
+      font-size: 18px;
+      color: #666;
+    }
+    .arrow {
+      position: absolute;
+      right: 60px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 50px;
+      height: 50px;
+      background: #25a2ff;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .arrow svg {
+      width: 24px;
+      height: 24px;
+      fill: white;
+    }
+    .footer {
+      text-align: center;
+    }
+    .website {
+      font-size: 16px;
+      color: #666;
+      margin-bottom: 16px;
+    }
+    .dots {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+    }
+    .dot {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+    }
+  </style>
+</head>
+<body>
+  <div class="poster">
+    <div class="header">
+      <div class="title">
+        <span class="we-are">WE ARE</span>
+        <span class="hiring">HIRING!</span>
+      </div>
+      <img src="data:image/png;base64,${LOGOS.dark || ''}" class="logo" alt="Sagan">
+    </div>
+
+    <div class="jobs-list">
+      ${jobItems}
+    </div>
+
+    <div class="arrow">
+      <svg viewBox="0 0 24 24"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/></svg>
+    </div>
+
+    <div class="footer">
+      <div class="website">Visit Our Website to Apply:<br>www.saganrecruitment.com/jobs/</div>
+      <div class="dots">${dotsHTML}</div>
+    </div>
+  </div>
+</body>
+</html>`;
+}
+
+function generateCarouselDetailHTML(job, dotColors) {
+  const responsibilities = (job.responsibilities || []).slice(0, 3).map(r =>
+    `<li>${r}</li>`
+  ).join('') || '<li>Details will be provided</li>';
+
+  const qualifications = (job.qualifications || []).slice(0, 3).map(q =>
+    `<li>${q}</li>`
+  ).join('') || '<li>Qualifications will be discussed</li>';
+
+  return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    @font-face {
+      font-family: 'PP Mori';
+      src: url(data:font/otf;base64,${FONTS['PPMori-SemiBold'] || ''}) format('opentype');
+      font-weight: 600;
+    }
+    @font-face {
+      font-family: 'PP Neue Montreal';
+      src: url(data:font/otf;base64,${FONTS['PPNeueMontreal-Medium'] || ''}) format('opentype');
+      font-weight: 500;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      width: 1080px;
+      height: 1080px;
+      font-family: 'PP Neue Montreal', sans-serif;
+      background: #fafafa;
+    }
+    .poster {
+      width: 1080px;
+      height: 1080px;
+      display: flex;
+      flex-direction: column;
+    }
+    .header {
+      background: #fafafa;
+      padding: 40px 60px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .badge {
+      display: inline-block;
+      border: 3px solid #093a3e;
+      border-radius: 12px;
+      padding: 12px 32px;
+    }
+    .badge-text {
+      font-family: 'PP Mori', sans-serif;
+      font-size: 24px;
+      font-weight: 600;
+      color: #093a3e;
+    }
+    .logo {
+      width: 120px;
+    }
+    .content {
+      flex: 1;
+      padding: 0 60px 40px;
+    }
+    .job-title {
+      font-family: 'PP Mori', sans-serif;
+      font-size: 42px;
+      font-weight: 600;
+      color: #093a3e;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+    }
+    .job-code {
+      font-size: 24px;
+      color: #093a3e;
+      margin-bottom: 24px;
+    }
+    .salary-label {
+      font-size: 16px;
+      color: #666;
+      margin-bottom: 4px;
+    }
+    .salary {
+      font-family: 'PP Mori', sans-serif;
+      font-size: 36px;
+      font-weight: 600;
+      color: #093a3e;
+      margin-bottom: 20px;
+    }
+    .meta {
+      display: flex;
+      gap: 40px;
+      margin-bottom: 32px;
+      font-size: 18px;
+      color: #093a3e;
+    }
+    .meta-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .section-title {
+      font-family: 'PP Mori', sans-serif;
+      font-size: 16px;
+      font-weight: 600;
+      color: #093a3e;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 12px;
+      margin-top: 24px;
+    }
+    .list {
+      list-style: disc;
+      padding-left: 24px;
+      font-size: 16px;
+      color: #333;
+      line-height: 1.8;
+    }
+    .footer {
+      background: #25a2ff;
+      padding: 32px 60px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .apply-btn {
+      background: #f5b801;
+      color: #093a3e;
+      font-family: 'PP Mori', sans-serif;
+      font-size: 22px;
+      font-weight: 600;
+      padding: 16px 40px;
+      border-radius: 12px;
+    }
+    .website {
+      color: white;
+      font-size: 18px;
+    }
+  </style>
+</head>
+<body>
+  <div class="poster">
+    <div class="header">
+      <div class="badge">
+        <span class="badge-text">WE ARE HIRING!</span>
+      </div>
+      <img src="data:image/png;base64,${LOGOS.dark || ''}" class="logo" alt="Sagan">
+    </div>
+
+    <div class="content">
+      <h1 class="job-title">${job.title || 'Job Title'}</h1>
+      ${job.jobCode ? `<div class="job-code">(${job.jobCode})</div>` : ''}
+
+      <div class="salary-label">Salary Range:</div>
+      <div class="salary">${job.salary || '$1,000 - $2,000'} per month</div>
+
+      <div class="meta">
+        <div class="meta-item">🏠 ${job.location || '100% REMOTE'}</div>
+        <div class="meta-item">🕐 ${job.schedule || 'M-F, 9AM-5PM'}</div>
+      </div>
+
+      <div class="section-title">Key Responsibilities</div>
+      <ul class="list">${responsibilities}</ul>
+
+      <div class="section-title">Qualifications</div>
+      <ul class="list">${qualifications}</ul>
+    </div>
+
+    <div class="footer">
+      <div class="apply-btn">APPLY NOW</div>
+      <div class="website">www.saganrecruitment.com/jobs/</div>
+    </div>
+  </div>
+</body>
+</html>`;
+}
 
 // Main endpoint
 app.post('/generate', async (req, res) => {
@@ -396,66 +923,45 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Info
-app.get('/', (req, res) => {
+// API Info (for programmatic access)
+app.get('/api/info', (req, res) => {
   res.json({
     name: 'Sagan Image Generator API',
-    version: '2.0.0',
+    version: '3.0.0',
     brandColor: '#25a2ff',
     templates: TEMPLATES,
     dotStyles: DOT_STYLE_NAMES,
-    examples: {
-      singleJob: {
-        template: 'catalog-1',
-        jobTitle: 'Video Editor',
-        salary: '$1,200',
-        location: 'Remote',
-        schedule: 'Full-time',
-        dotStyle: 'default'
-      },
-      withDescription: {
-        template: 'catalog-1',
-        jobTitle: 'Marketing Manager',
-        description: 'Job Title: Marketing Manager\nLocation: Remote\nSalary Range: 2000 - 2500 USD/month',
-        dotStyle: 'vibrant'
-      },
-      multiJob: {
-        template: 'catalog-multi',
-        jobs: [
-          { title: 'Video Editor', salary: '$1,200' },
-          { title: 'Marketing Manager', salary: '$2,500' },
-          { title: 'Sales Rep', salary: '$1,800' }
-        ],
-        dotStyle: 'warm'
-      },
-      noDots: {
-        template: 'catalog-1',
-        jobTitle: 'Content Creator',
-        salary: '$750',
-        location: 'Remote',
-        dotStyle: 'none'
-      }
+    endpoints: {
+      generate: 'POST /generate - Generate single image',
+      carousel: 'POST /generate-carousel - Generate carousel set',
+      jobs: 'GET /api/airtable/jobs - Get jobs from Airtable',
+      preview: 'GET /api/template-preview/:id - Preview template'
     }
   });
 });
+
+// Serve frontend for root (index.html will be served by static middleware)
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`
 ====================================
-  Sagan Image Generator API v2.0
+  Sagan Image Generator v3.0
 ====================================
 
-  Running on: http://localhost:${PORT}
+  Web App: http://localhost:${PORT}
   Brand Color: #25a2ff (Sagan Blue)
 
-  Templates: ${TEMPLATES.join(', ')}
+  Templates: ${TEMPLATES.length} available
   Dot Styles: ${DOT_STYLE_NAMES.join(', ')}
 
   Endpoints:
-  - GET  /         → API info & examples
-  - GET  /health   → Health check
-  - POST /generate → Generate image
+  - GET  /                    → Web App
+  - GET  /api/info            → API info
+  - GET  /api/airtable/jobs   → Jobs from Airtable
+  - GET  /api/template-preview/:id → Template preview
+  - POST /generate            → Generate single image
+  - POST /generate-carousel   → Generate carousel set
 
 ====================================
   `);
