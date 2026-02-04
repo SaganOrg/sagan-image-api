@@ -5,158 +5,157 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sagan Image Generator</title>
   <link rel="stylesheet" href="styles.css">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
   <div class="app">
-    <!-- Sidebar -->
-    <aside class="sidebar">
+    <!-- Header -->
+    <header class="header">
       <div class="logo">
-        <svg width="32" height="32" viewBox="0 0 100 100">
+        <svg width="40" height="40" viewBox="0 0 100 100">
           <circle cx="50" cy="50" r="45" fill="none" stroke="#25a2ff" stroke-width="8"/>
           <circle cx="50" cy="50" r="12" fill="#25a2ff"/>
         </svg>
         <span>Sagan</span>
       </div>
-
       <nav class="nav">
-        <button class="nav-btn active" data-page="jobs">
-          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M20 6L9 17l-5-5"/>
-          </svg>
-          Job Listings
-        </button>
-        <button class="nav-btn" data-page="templates">
-          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
-            <rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
-          </svg>
-          Templates
-        </button>
-        <button class="nav-btn" data-page="ai">
-          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M12 2a10 10 0 1 0 10 10H12V2z"/><path d="M20 10a8 8 0 1 1-16 0"/>
-          </svg>
-          AI Creator
-        </button>
+        <button class="nav-btn active" data-page="generate">Generate Images</button>
+        <button class="nav-btn" data-page="templates">Templates</button>
       </nav>
-
-      <div class="sidebar-footer">
-        <div class="dot-style-selector">
-          <label>Dot Style</label>
-          <select id="dotStyle">
-            <option value="default">Default</option>
-            <option value="vibrant">Vibrant</option>
-            <option value="warm">Warm</option>
-            <option value="cool">Cool</option>
-            <option value="mono">Mono</option>
-            <option value="none">None</option>
-          </select>
-        </div>
-      </div>
-    </aside>
+    </header>
 
     <!-- Main Content -->
     <main class="main">
-      <!-- Jobs Page -->
-      <div class="page active" id="page-jobs">
-        <div class="page-header">
-          <h1>Job Listings</h1>
-          <p>Select jobs from Airtable to generate images</p>
-        </div>
+      <!-- Generate Page -->
+      <section class="page active" id="page-generate">
+        <div class="page-content">
+          <!-- Left Panel: Job Selection -->
+          <div class="panel jobs-panel">
+            <div class="panel-header">
+              <h2>Job Listings</h2>
+              <button class="btn-refresh" onclick="loadJobs()">↻ Refresh</button>
+            </div>
 
-        <div class="toolbar">
-          <div class="output-type">
-            <button class="type-btn active" data-type="single">Single Image</button>
-            <button class="type-btn" data-type="carousel">Carousel</button>
+            <div class="jobs-list" id="jobsList">
+              <!-- Jobs will be loaded here -->
+            </div>
           </div>
-          <button class="btn btn-primary" id="generateBtn" disabled>
-            Generate Images
-          </button>
-        </div>
 
-        <div class="jobs-list" id="jobsList">
-          <div class="loading">
-            <div class="spinner"></div>
-            <p>Loading jobs from Airtable...</p>
+          <!-- Right Panel: Options & Generate -->
+          <div class="panel options-panel">
+            <div class="panel-header">
+              <h2>Generate Options</h2>
+            </div>
+
+            <!-- Output Type -->
+            <div class="option-group">
+              <label>Output Type</label>
+              <div class="toggle-group">
+                <button class="toggle-btn active" data-type="single">Single Image</button>
+                <button class="toggle-btn" data-type="carousel">Carousel Set</button>
+              </div>
+            </div>
+
+            <!-- Template Selection -->
+            <div class="option-group">
+              <label>Template</label>
+              <select id="templateSelect">
+                <option value="catalog-1">Catalog 1 - Clean Card</option>
+                <option value="catalog-2">Catalog 2 - Split Design</option>
+                <option value="catalog-3">Catalog 3 - Bold</option>
+                <option value="modern-clean">Modern Clean</option>
+                <option value="diagonal">Diagonal</option>
+                <option value="waves">Waves</option>
+                <option value="bold-gradient">Bold Gradient</option>
+                <option value="split-screen">Split Screen</option>
+              </select>
+            </div>
+
+            <!-- Dot Style -->
+            <div class="option-group">
+              <label>Dot Style</label>
+              <div class="dot-options">
+                <button class="dot-btn active" data-style="default" title="Default">
+                  <span style="background:#f5b801"></span>
+                  <span style="background:#73e491"></span>
+                  <span style="background:#25a2ff"></span>
+                  <span style="background:#ff7455"></span>
+                  <span style="background:#9e988f"></span>
+                </button>
+                <button class="dot-btn" data-style="vibrant" title="Vibrant">
+                  <span style="background:#796aff"></span>
+                  <span style="background:#25a2ff"></span>
+                  <span style="background:#73e491"></span>
+                  <span style="background:#ff7455"></span>
+                  <span style="background:#f5b801"></span>
+                </button>
+                <button class="dot-btn" data-style="warm" title="Warm">
+                  <span style="background:#ff7455"></span>
+                  <span style="background:#f5b801"></span>
+                  <span style="background:#611f2c"></span>
+                  <span style="background:#9e988f"></span>
+                  <span style="background:#cac1b4"></span>
+                </button>
+                <button class="dot-btn" data-style="cool" title="Cool">
+                  <span style="background:#796aff"></span>
+                  <span style="background:#25a2ff"></span>
+                  <span style="background:#093a3e"></span>
+                  <span style="background:#73e491"></span>
+                  <span style="background:#9e988f"></span>
+                </button>
+                <button class="dot-btn" data-style="none" title="No Dots">
+                  <span style="background:#ddd"></span>
+                  <span style="background:#ddd"></span>
+                  <span style="background:#ddd"></span>
+                  <span style="background:#ddd"></span>
+                  <span style="background:#ddd"></span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Selected Count -->
+            <div class="selected-info" id="selectedInfo">
+              Select jobs to generate images
+            </div>
+
+            <!-- Generate Button -->
+            <button class="btn-generate" id="generateBtn" disabled>
+              Generate Images
+            </button>
           </div>
         </div>
-      </div>
+      </section>
 
       <!-- Templates Page -->
-      <div class="page" id="page-templates">
-        <div class="page-header">
-          <h1>Template Gallery</h1>
-          <p>Choose a template for your job posts</p>
+      <section class="page" id="page-templates">
+        <div class="templates-header">
+          <h2>Template Gallery</h2>
+          <p>Preview available templates</p>
         </div>
-
         <div class="templates-grid" id="templatesGrid">
           <!-- Templates will be loaded here -->
         </div>
-      </div>
-
-      <!-- AI Creator Page -->
-      <div class="page" id="page-ai">
-        <div class="page-header">
-          <h1>AI Template Creator</h1>
-          <p>Describe your ideal template and let AI create it</p>
-        </div>
-
-        <div class="ai-creator">
-          <div class="prompt-section">
-            <textarea id="aiPrompt" placeholder="Describe your template...
-Example: Minimalist design with large typography, dark blue background, salary highlighted in yellow, modern and professional look"></textarea>
-            <button class="btn btn-primary" id="generateAiBtn">
-              Generate Template
-            </button>
-          </div>
-
-          <div class="ai-preview" id="aiPreview">
-            <div class="placeholder">
-              <svg width="48" height="48" fill="none" stroke="#ccc" stroke-width="2">
-                <rect x="6" y="6" width="36" height="36" rx="4"/>
-                <path d="M6 30l12-12 8 8 16-16"/>
-              </svg>
-              <p>AI-generated template preview will appear here</p>
-            </div>
-          </div>
-        </div>
-      </div>
+      </section>
     </main>
 
-    <!-- Preview Panel -->
-    <aside class="preview-panel" id="previewPanel">
-      <div class="preview-header">
-        <h3>Preview</h3>
-        <button class="close-btn" id="closePreview">&times;</button>
-      </div>
-      <div class="preview-content" id="previewContent">
-        <p class="no-preview">Select a job and template to see preview</p>
-      </div>
-      <div class="preview-actions">
-        <button class="btn btn-secondary" id="downloadBtn" disabled>Download</button>
-        <button class="btn btn-primary" id="downloadAllBtn" disabled>Download All</button>
-      </div>
-    </aside>
-  </div>
-
-  <!-- Toast Notifications -->
-  <div class="toast-container" id="toastContainer"></div>
-
-  <!-- Modal -->
-  <div class="modal" id="modal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h3 id="modalTitle">Generated Images</h3>
-        <button class="close-btn" id="closeModal">&times;</button>
-      </div>
-      <div class="modal-body" id="modalBody"></div>
-      <div class="modal-footer">
-        <button class="btn btn-secondary" id="modalClose">Close</button>
-        <button class="btn btn-primary" id="modalDownload">Download All</button>
+    <!-- Result Modal -->
+    <div class="modal" id="resultModal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Generated Images</h3>
+          <button class="modal-close" onclick="closeModal()">&times;</button>
+        </div>
+        <div class="modal-body" id="modalBody">
+          <!-- Images will appear here -->
+        </div>
+        <div class="modal-footer">
+          <button class="btn-secondary" onclick="closeModal()">Close</button>
+          <button class="btn-primary" onclick="downloadAll()">Download All</button>
+        </div>
       </div>
     </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
   </div>
 
   <script src="app.js"></script>
