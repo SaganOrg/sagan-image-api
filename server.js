@@ -240,7 +240,7 @@ app.post('/generate-carousel', async (req, res) => {
 
   try {
     console.log('Generating carousel...');
-    const { jobs = [], dotStyle = 'default' } = req.body;
+    const { jobs = [], dotStyle = 'default', logoStyle = 'dark' } = req.body;
 
     if (jobs.length === 0) {
       return res.status(400).json({ error: 'No jobs provided' });
@@ -253,8 +253,11 @@ app.post('/generate-carousel', async (req, res) => {
     const page = await browser.newPage();
     await page.setViewportSize({ width: 1080, height: 1080 });
 
+    // Get selected logo
+    const selectedLogo = LOGOS[logoStyle] || LOGOS.dark || '';
+
     // Generate COVER image
-    const coverHtml = generateCarouselCoverHTML(jobs, selectedDotStyle);
+    const coverHtml = generateCarouselCoverHTML(jobs, selectedDotStyle, selectedLogo);
     await page.setContent(coverHtml, { waitUntil: 'load' });
     await page.waitForTimeout(500);
     const coverBuffer = await page.screenshot({ type: 'png' });
@@ -264,7 +267,7 @@ app.post('/generate-carousel', async (req, res) => {
     // Generate DETAIL images for each job
     for (let i = 0; i < jobs.length; i++) {
       const job = jobs[i];
-      const detailHtml = generateCarouselDetailHTML(job, selectedDotStyle);
+      const detailHtml = generateCarouselDetailHTML(job, selectedDotStyle, selectedLogo);
       await page.setContent(detailHtml, { waitUntil: 'load' });
       await page.waitForTimeout(500);
       const detailBuffer = await page.screenshot({ type: 'png' });
@@ -698,7 +701,7 @@ IMPORTANT: Only return the JSON, nothing else.`
 // HELPER FUNCTIONS FOR CAROUSEL
 // ============================================
 
-function generateCarouselCoverHTML(jobs, dotColors) {
+function generateCarouselCoverHTML(jobs, dotColors, logo) {
   const jobItems = jobs.map((job, index) => `
     <div class="job-pill">
       <div class="job-pill-title">${job.title || 'Job Title'}</div>
@@ -835,7 +838,7 @@ function generateCarouselCoverHTML(jobs, dotColors) {
         <span class="we-are">WE ARE</span>
         <span class="hiring">HIRING!</span>
       </div>
-      <img src="data:image/png;base64,${LOGOS.dark || ''}" class="logo" alt="Sagan">
+      <img src="data:image/png;base64,${logo || LOGOS.dark || ''}" class="logo" alt="Sagan">
     </div>
 
     <div class="jobs-list">
@@ -855,7 +858,7 @@ function generateCarouselCoverHTML(jobs, dotColors) {
 </html>`;
 }
 
-function generateCarouselDetailHTML(job, dotColors) {
+function generateCarouselDetailHTML(job, dotColors, logo) {
   const responsibilities = (job.responsibilities || []).slice(0, 3).map(r =>
     `<li>${r}</li>`
   ).join('') || '<li>Details will be provided</li>';
@@ -1000,7 +1003,7 @@ function generateCarouselDetailHTML(job, dotColors) {
       <div class="badge">
         <span class="badge-text">WE ARE HIRING!</span>
       </div>
-      <img src="data:image/png;base64,${LOGOS.dark || ''}" class="logo" alt="Sagan">
+      <img src="data:image/png;base64,${logo || LOGOS.dark || ''}" class="logo" alt="Sagan">
     </div>
 
     <div class="content">
@@ -1056,7 +1059,8 @@ app.post('/generate', async (req, res) => {
 
       // Options
       template = 'auto',
-      dotStyle = 'default'
+      dotStyle = 'default',
+      logoStyle = 'dark'
     } = req.body;
 
     // Select template
@@ -1093,8 +1097,9 @@ app.post('/generate', async (req, res) => {
     html = html.replace(/\{\{background\}\}/g, theme.background);
     html = html.replace(/\{\{accent\}\}/g, theme.accent);
 
-    // Replace logos
-    html = html.replace(/\{\{logoBase64\}\}/g, LOGOS.dark || '');
+    // Replace logos based on selected style
+    const selectedLogo = LOGOS[logoStyle] || LOGOS.dark || '';
+    html = html.replace(/\{\{logoBase64\}\}/g, selectedLogo);
     html = html.replace(/\{\{logoLightBase64\}\}/g, LOGOS.light || LOGOS.dark || '');
     html = html.replace(/\{\{logoBlueBase64\}\}/g, LOGOS.blue || LOGOS.dark || '');
 
@@ -1240,6 +1245,22 @@ app.post('/generate', async (req, res) => {
     if (browser) await browser.close();
     res.status(500).json({ error: error.message });
   }
+});
+
+// Logo endpoint for preview
+app.get('/api/logo/:type', (req, res) => {
+  const { type } = req.params;
+  const logoKey = type === 'light' ? 'light' : type === 'blue' ? 'blue' : 'dark';
+  const logo = LOGOS[logoKey] || LOGOS.dark;
+
+  if (!logo) {
+    return res.status(404).json({ error: 'Logo not found' });
+  }
+
+  const buffer = Buffer.from(logo, 'base64');
+  res.set('Content-Type', 'image/png');
+  res.set('Cache-Control', 'public, max-age=86400');
+  res.send(buffer);
 });
 
 // Health check

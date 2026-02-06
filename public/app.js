@@ -8,6 +8,7 @@ let state = {
   selectedJobs: new Set(),
   template: 'catalog-1',
   dotStyle: 'default',
+  logoStyle: 'dark',
   outputType: 'single',
   generatedImages: [],
   aiTemplateHtml: null
@@ -18,6 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initNavigation();
   initToggle();
   initDotStyle();
+  initLogoStyle();
   initTemplateSelect();
   loadJobs();
   loadTemplates();
@@ -55,6 +57,17 @@ function initDotStyle() {
       document.querySelectorAll('.dot-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       state.dotStyle = btn.dataset.style;
+    });
+  });
+}
+
+// Logo Style
+function initLogoStyle() {
+  document.querySelectorAll('.logo-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.logo-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      state.logoStyle = btn.dataset.logo;
     });
   });
 }
@@ -239,7 +252,8 @@ async function generateImages() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           jobs: selectedJobData,
-          dotStyle: state.dotStyle
+          dotStyle: state.dotStyle,
+          logoStyle: state.logoStyle
         })
       });
 
@@ -271,7 +285,8 @@ async function generateImages() {
             qualifications: job.qualifications || [],
             jobCode: job.jobCode || '',
             template: state.template,
-            dotStyle: state.dotStyle
+            dotStyle: state.dotStyle,
+            logoStyle: state.logoStyle
           })
         });
 

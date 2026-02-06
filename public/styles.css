@@ -240,10 +240,12 @@ body {
 
 /* Options Panel */
 .options-panel {
-  height: fit-content;
   position: relative;
   top: 0;
   align-self: start;
+  max-height: calc(100vh - 130px);
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .option-group {
@@ -311,7 +313,49 @@ select:focus {
 /* Dot Options */
 .dot-options {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
+}
+
+/* Logo Options */
+.logo-options {
+  display: flex;
+  gap: 8px;
+}
+
+.logo-btn {
+  flex: 1;
+  padding: 12px;
+  border: 2px solid var(--border);
+  background: var(--surface);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logo-btn:hover {
+  border-color: var(--primary);
+}
+
+.logo-btn.active {
+  border-color: var(--primary);
+  background: #f0f9ff;
+}
+
+.logo-btn img {
+  height: 24px;
+  width: auto;
+}
+
+.logo-btn.dark-bg {
+  background: #093a3e;
+}
+
+.logo-btn.dark-bg.active {
+  background: #0a4449;
 }
 
 .dot-btn {
