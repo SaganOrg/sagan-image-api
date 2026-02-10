@@ -231,19 +231,24 @@ function updateSelectedInfo() {
   const info = document.getElementById('selectedInfo');
   const btn = document.getElementById('generateBtn');
 
+  const linkedinBtn = document.getElementById('linkedinBtn');
+
   if (count === 0) {
     info.textContent = 'Select jobs to generate images';
     btn.disabled = true;
     btn.textContent = 'Generate Images';
+    linkedinBtn.disabled = true;
   } else if (state.outputType === 'carousel' && count < 2) {
     info.textContent = `${count} job selected - Need 2+ for carousel`;
     btn.disabled = true;
     btn.textContent = 'Select 2+ jobs for carousel';
+    linkedinBtn.disabled = true;
   } else {
     const type = state.outputType === 'carousel' ? 'Carousel' : `${count} Image${count > 1 ? 's' : ''}`;
     info.textContent = `${count} job${count > 1 ? 's' : ''} selected`;
     btn.disabled = false;
     btn.textContent = `Generate ${type}`;
+    linkedinBtn.disabled = false;
   }
 }
 
@@ -556,6 +561,45 @@ function useAITemplate() {
   }
 }
 
+// Post to LinkedIn via Make webhook
+async function postToLinkedIn() {
+  const selectedJobData = state.jobs.filter(job => state.selectedJobs.has(job.id));
+  if (selectedJobData.length === 0) return;
+
+  const linkedinBtn = document.getElementById('linkedinBtn');
+  linkedinBtn.disabled = true;
+  linkedinBtn.textContent = 'Sending to Make...';
+
+  try {
+    // Send job data + settings to Make webhook
+    const response = await fetch(`${API_URL}/api/webhook/linkedin`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        jobs: selectedJobData,
+        template: state.template,
+        dotStyle: state.dotStyle,
+        logoStyle: state.logoStyle,
+        outputType: state.outputType
+      })
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to send');
+    }
+
+    showToast('Sent to LinkedIn automation!', 'success');
+  } catch (error) {
+    console.error('LinkedIn error:', error);
+    showToast('Failed to send: ' + error.message, 'error');
+  } finally {
+    linkedinBtn.disabled = false;
+    linkedinBtn.textContent = 'Post to LinkedIn';
+    updateSelectedInfo();
+  }
+}
+
 // Expose to global
 window.toggleJob = toggleJob;
 window.selectTemplate = selectTemplate;
@@ -568,3 +612,4 @@ window.useAITemplate = useAITemplate;
 window.hideTemplate = hideTemplate;
 window.resetTemplates = resetTemplates;
 window.filterJobs = filterJobs;
+window.postToLinkedIn = postToLinkedIn;

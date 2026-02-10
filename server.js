@@ -1287,6 +1287,52 @@ app.post('/generate', async (req, res) => {
   }
 });
 
+// Make webhook proxy - sends data to Make for LinkedIn posting
+const MAKE_WEBHOOK_URL = process.env.MAKE_WEBHOOK_URL || '';
+
+app.post('/api/webhook/linkedin', async (req, res) => {
+  try {
+    if (!MAKE_WEBHOOK_URL) {
+      return res.status(400).json({
+        error: 'Make webhook not configured',
+        message: 'Add MAKE_WEBHOOK_URL to Railway environment variables'
+      });
+    }
+
+    const { jobs, template, dotStyle, logoStyle, outputType } = req.body;
+
+    if (!jobs || jobs.length === 0) {
+      return res.status(400).json({ error: 'No jobs provided' });
+    }
+
+    // Send to Make webhook
+    const webhookResponse = await fetch(MAKE_WEBHOOK_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        jobs,
+        template,
+        dotStyle,
+        logoStyle,
+        outputType,
+        apiUrl: `https://${req.get('host')}`,
+        timestamp: new Date().toISOString()
+      })
+    });
+
+    if (!webhookResponse.ok) {
+      throw new Error('Make webhook failed');
+    }
+
+    console.log('Sent to Make webhook:', jobs.length, 'jobs');
+    res.json({ success: true, message: 'Sent to Make automation' });
+
+  } catch (error) {
+    console.error('Webhook error:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Logo endpoint for preview
 app.get('/api/logo/:type', (req, res) => {
   const { type } = req.params;
