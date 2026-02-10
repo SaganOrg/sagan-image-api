@@ -219,18 +219,20 @@ app.get('/api/airtable/jobs', async (req, res) => {
       return res.json({ jobs: [], message: 'Airtable not configured' });
     }
 
-    const response = await fetch(
-      `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(AIRTABLE_TABLE_NAME)}?sort[0][field]=Created&sort[0][direction]=desc`,
-      {
-        headers: {
-          'Authorization': `Bearer ${AIRTABLE_API_KEY}`,
-          'Content-Type': 'application/json'
-        }
+    const airtableUrl = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(AIRTABLE_TABLE_NAME)}`;
+    console.log('Fetching Airtable:', airtableUrl);
+
+    const response = await fetch(airtableUrl, {
+      headers: {
+        'Authorization': `Bearer ${AIRTABLE_API_KEY}`,
+        'Content-Type': 'application/json'
       }
-    );
+    });
 
     if (!response.ok) {
-      throw new Error('Airtable API error');
+      const errBody = await response.text();
+      console.error('Airtable error response:', response.status, errBody);
+      throw new Error(`Airtable API error: ${response.status} - ${errBody}`);
     }
 
     const data = await response.json();
