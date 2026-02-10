@@ -117,9 +117,31 @@ function parseJobDescription(description) {
   }
 
   // Extract Job Title from description if present
-  const titleMatch = description.match(/Job\s*Title[:\s]*([^\n]+)/i);
+  const titleMatch = description.match(/Job\s*Title[:\s]*([^\n]+)/i) ||
+    description.match(/Position[:\s]*([^\n]+)/i) ||
+    description.match(/Role[:\s]*([^\n]+)/i);
   if (titleMatch) {
     result.extractedTitle = titleMatch[1].trim();
+  }
+
+  // Extract Responsibilities
+  const respMatch = description.match(/(?:Key\s*)?Responsibilities[:\s]*\n?([\s\S]*?)(?=\n\s*(?:Qualifications|Requirements|Skills|Education|About|Benefits|Compensation|$))/i);
+  if (respMatch) {
+    result.responsibilities = respMatch[1]
+      .split('\n')
+      .map(line => line.replace(/^[\s•\-\*\d.]+/, '').trim())
+      .filter(line => line.length > 5)
+      .slice(0, 5);
+  }
+
+  // Extract Qualifications
+  const qualMatch = description.match(/(?:Key\s*)?(?:Qualifications|Requirements)[:\s]*\n?([\s\S]*?)(?=\n\s*(?:Responsibilities|About|Benefits|Compensation|How to|$))/i);
+  if (qualMatch) {
+    result.qualifications = qualMatch[1]
+      .split('\n')
+      .map(line => line.replace(/^[\s•\-\*\d.]+/, '').trim())
+      .filter(line => line.length > 5)
+      .slice(0, 5);
   }
 
   console.log('Parsed description:', result);
@@ -182,7 +204,7 @@ const FONTS = loadFonts();
 // Airtable configuration
 const AIRTABLE_API_KEY = process.env.AIRTABLE_API_KEY || '';
 const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID || '';
-const AIRTABLE_TABLE_NAME = process.env.AIRTABLE_TABLE_NAME || 'Jobs';
+const AIRTABLE_TABLE_NAME = process.env.AIRTABLE_TABLE_NAME || 'Hiring Requests';
 
 // ============================================
 // API ENDPOINTS FOR FRONTEND
@@ -213,19 +235,26 @@ app.get('/api/airtable/jobs', async (req, res) => {
 
     const data = await response.json();
 
-    const jobs = data.records.map(record => ({
-      id: record.id,
-      title: record.fields['Job Title'] || record.fields['Name'] || 'Untitled',
-      jobCode: record.fields['Job Code'] || record.fields['Code'] || '',
-      salary: record.fields['Salary'] || record.fields['Salary Range'] || '',
-      location: record.fields['Location'] || 'Remote',
-      schedule: record.fields['Schedule'] || record.fields['Work Schedule'] || 'Full-time',
-      responsibilities: record.fields['Responsibilities'] ?
-        record.fields['Responsibilities'].split('\n').filter(r => r.trim()) : [],
-      qualifications: record.fields['Qualifications'] ?
-        record.fields['Qualifications'].split('\n').filter(q => q.trim()) : [],
-      description: record.fields['Description'] || record.fields['Job Description'] || ''
-    }));
+    const jobs = data.records.map(record => {
+      const description = record.fields['Final Job Description'] || record.fields['Description'] || record.fields['Job Description'] || '';
+      const parsed = parseJobDescription(description);
+
+      return {
+        id: record.id,
+        title: record.fields['Job Title'] || record.fields['Name'] || parsed.extractedTitle || 'Untitled',
+        jobCode: record.fields['Job Code'] || record.fields['Code'] || '',
+        salary: record.fields['Salary'] || record.fields['Salary Range'] || parsed.salary || '',
+        location: record.fields['Location'] || parsed.location || 'Remote',
+        schedule: record.fields['Schedule'] || record.fields['Work Schedule'] || parsed.schedule || 'Full-time',
+        responsibilities: record.fields['Responsibilities'] ?
+          record.fields['Responsibilities'].split('\n').filter(r => r.trim()) :
+          parsed.responsibilities || [],
+        qualifications: record.fields['Qualifications'] ?
+          record.fields['Qualifications'].split('\n').filter(q => q.trim()) :
+          parsed.qualifications || [],
+        description: description
+      };
+    });
 
     res.json({ jobs });
   } catch (error) {
