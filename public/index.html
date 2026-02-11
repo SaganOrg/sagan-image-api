@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sagan Image Generator</title>
-  <link rel="stylesheet" href="styles.css?v=3">
+  <link rel="stylesheet" href="styles.css?v=4">
 </head>
 <body>
   <div class="app">
@@ -37,6 +37,17 @@
 
             <div class="jobs-list" id="jobsList">
               <!-- Jobs will be loaded here -->
+            </div>
+
+            <!-- Selected Jobs Bar -->
+            <div class="selected-jobs-bar" id="selectedJobsBar" style="display:none;">
+              <div class="selected-jobs-header">
+                <span class="selected-jobs-count" id="selectedJobsCount">0 selected</span>
+                <button class="selected-jobs-clear" onclick="clearAllSelections()">Clear All</button>
+              </div>
+              <div class="selected-jobs-chips" id="selectedJobsChips">
+                <!-- Selected job chips will appear here -->
+              </div>
             </div>
           </div>
 
@@ -214,6 +225,6 @@
     <div class="toast" id="toast"></div>
   </div>
 
-  <script src="app.js?v=3"></script>
+  <script src="app.js?v=4"></script>
 </body>
 </html>

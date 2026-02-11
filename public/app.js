@@ -223,6 +223,40 @@ function toggleJob(id) {
   });
 
   updateSelectedInfo();
+  renderSelectedChips();
+}
+
+// Clear all selections
+function clearAllSelections() {
+  state.selectedJobs.clear();
+  document.querySelectorAll('.job-card').forEach(card => {
+    card.classList.remove('selected');
+  });
+  updateSelectedInfo();
+  renderSelectedChips();
+}
+
+// Render selected jobs chips
+function renderSelectedChips() {
+  const bar = document.getElementById('selectedJobsBar');
+  const chips = document.getElementById('selectedJobsChips');
+  const count = document.getElementById('selectedJobsCount');
+
+  if (state.selectedJobs.size === 0) {
+    bar.style.display = 'none';
+    return;
+  }
+
+  bar.style.display = 'block';
+  count.textContent = `${state.selectedJobs.size} selected`;
+
+  const selectedJobData = state.jobs.filter(job => state.selectedJobs.has(job.id));
+  chips.innerHTML = selectedJobData.map(job => `
+    <div class="selected-chip">
+      <span>${job.title}</span>
+      <button class="chip-remove" onclick="event.stopPropagation(); toggleJob('${job.id}')" title="Remove">×</button>
+    </div>
+  `).join('');
 }
 
 // Update Selected Info
@@ -612,4 +646,5 @@ window.useAITemplate = useAITemplate;
 window.hideTemplate = hideTemplate;
 window.resetTemplates = resetTemplates;
 window.filterJobs = filterJobs;
+window.clearAllSelections = clearAllSelections;
 window.postToLinkedIn = postToLinkedIn;

@@ -257,6 +257,93 @@ body {
   font-weight: 600;
 }
 
+/* Selected Jobs Bar */
+.selected-jobs-bar {
+  border-top: 2px solid var(--primary);
+  background: #f0f9ff;
+  padding: 14px 16px;
+  flex-shrink: 0;
+}
+
+.selected-jobs-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.selected-jobs-count {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--primary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.selected-jobs-clear {
+  padding: 4px 12px;
+  border: 1px solid var(--primary);
+  background: transparent;
+  color: var(--primary);
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.selected-jobs-clear:hover {
+  background: var(--primary);
+  color: white;
+}
+
+.selected-jobs-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.selected-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: white;
+  border: 1px solid var(--primary);
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--secondary);
+  animation: chipIn 0.2s ease;
+}
+
+@keyframes chipIn {
+  from { transform: scale(0.8); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.selected-chip .chip-remove {
+  width: 18px;
+  height: 18px;
+  border: none;
+  background: #fee2e2;
+  color: #ef4444;
+  border-radius: 50%;
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.selected-chip .chip-remove:hover {
+  background: #ef4444;
+  color: white;
+}
+
 /* Options Panel */
 .options-panel {
   position: relative;
