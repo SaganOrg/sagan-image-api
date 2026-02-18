@@ -1165,10 +1165,10 @@ STRICT REQUIREMENTS:
    - {{accent}} - accent color
    - {{logoBase64}} - company logo (use as: <img src="data:image/png;base64,{{logoBase64}}" ...>)
    - {{jobTitle}} - the job title text
-   - {{salary}} - salary range text
+   - {{salary}} - salary range text (ALREADY includes $ symbol, e.g. "$2,500 - $3,500" — do NOT add $ prefix separately)
    - {{location}} - location text
    - {{schedule}} - work schedule text
-   - {{jobCode}} - job reference code
+   - {{jobCode}} - job reference code (MAY BE EMPTY — always wrap in a conditional like: <span>{{jobCode}}</span> with no label, or omit the label entirely)
    - {{responsibilities}} - HTML <li> items for responsibilities list
    - {{qualifications}} - HTML <li> items for qualifications list
    - {{dot1Color}} through {{dot5Color}} - decorative dot colors
