@@ -407,47 +407,41 @@ app.get('/api/template-preview/:templateId', async (req, res) => {
   }
 });
 
-// AI Template generation - ONLY modifies colors/design, NOT text
-app.post('/api/ai-template', async (req, res) => {
+// AI Chat Design - Gemini powered conversational design
+app.post('/api/ai-chat', async (req, res) => {
   let browser = null;
 
   try {
-    const { prompt, job, dotStyle = 'default' } = req.body;
+    const { message, history = [], job, dotStyle = 'default', currentDesign = null } = req.body;
 
-    if (!prompt || !job) {
-      return res.status(400).json({ error: 'Prompt and job data required' });
+    if (!message || !job) {
+      return res.status(400).json({ error: 'Message and job data required' });
     }
 
-    const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
-
-    if (!ANTHROPIC_API_KEY) {
+    const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+    if (!GEMINI_API_KEY) {
       return res.status(400).json({
         error: 'AI not configured',
-        message: 'Add ANTHROPIC_API_KEY to Railway environment variables'
+        message: 'Add GEMINI_API_KEY to Railway environment variables'
       });
     }
 
     const selectedDotStyle = DOT_STYLES[dotStyle] || DOT_STYLES.default;
 
-    // Call Claude API to get ONLY color/design suggestions
-    const claudeResponse = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01'
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1024,
-        messages: [{
-          role: 'user',
-          content: `Based on this design request, suggest ONLY colors and layout style. DO NOT write any job text.
+    // Build conversation context
+    const systemPrompt = `Sen bir iş ilanı görseli tasarım asistanısın. Kullanıcı sana renk ve stil tercihleri söyler, sen de JSON formatında tasarım parametreleri döndürürsün.
 
-USER'S DESIGN REQUEST:
-${prompt}
+Mevcut iş ilanı: "${job.title}" - ${job.salary || 'Maaş belirtilmemiş'}
 
-Return ONLY a JSON object with these exact keys (no other text):
+${currentDesign ? `Mevcut tasarım parametreleri: ${JSON.stringify(currentDesign)}` : 'Henüz tasarım yok.'}
+
+KURALLAR:
+- İş ilanı metinlerine (başlık, maaş, vb.) DOKUNMA
+- Sadece renk ve stil değiştir
+- Her yanıtta JSON bloğu VE kısa Türkçe açıklama döndür
+- JSON şu formatta olmalı:
+
+\`\`\`json
 {
   "primaryColor": "#hex",
   "secondaryColor": "#hex",
@@ -457,35 +451,66 @@ Return ONLY a JSON object with these exact keys (no other text):
   "textColor": "#hex",
   "buttonColor": "#hex",
   "buttonTextColor": "#hex",
-  "layout": "clean" | "bold" | "minimal" | "gradient"
+  "replyMessage": "Kısa Türkçe açıklama"
 }
+\`\`\``;
 
-IMPORTANT: Only return the JSON, nothing else.`
-        }]
-      })
+    // Build Gemini conversation history
+    const geminiContents = [];
+
+    // Add previous messages
+    for (const msg of history) {
+      geminiContents.push({
+        role: msg.role === 'user' ? 'user' : 'model',
+        parts: [{ text: msg.content }]
+      });
+    }
+
+    // Add current message
+    geminiContents.push({
+      role: 'user',
+      parts: [{ text: message }]
     });
 
-    if (!claudeResponse.ok) {
-      const error = await claudeResponse.json();
-      console.error('Claude API error:', error);
-      throw new Error('AI service error');
+    const geminiResponse = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          system_instruction: { parts: [{ text: systemPrompt }] },
+          contents: geminiContents,
+          generationConfig: { temperature: 0.7, maxOutputTokens: 1024 }
+        })
+      }
+    );
+
+    if (!geminiResponse.ok) {
+      const err = await geminiResponse.json();
+      console.error('Gemini error:', err);
+      throw new Error('Gemini API error: ' + (err.error?.message || 'Unknown'));
     }
 
-    const claudeData = await claudeResponse.json();
-    let aiResponse = claudeData.content[0].text;
+    const geminiData = await geminiResponse.json();
+    const aiText = geminiData.candidates[0].content.parts[0].text;
+    console.log('Gemini response:', aiText);
 
-    // Parse AI color suggestions
-    let colors;
+    // Parse JSON from response
+    let colors = null;
+    let replyMessage = '';
     try {
-      // Extract JSON from response
-      const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
-      colors = jsonMatch ? JSON.parse(jsonMatch[0]) : null;
+      const jsonMatch = aiText.match(/```json\n?([\s\S]*?)\n?```/) || aiText.match(/\{[\s\S]*\}/);
+      const jsonStr = jsonMatch ? (jsonMatch[1] || jsonMatch[0]) : null;
+      if (jsonStr) {
+        const parsed = JSON.parse(jsonStr);
+        replyMessage = parsed.replyMessage || '';
+        delete parsed.replyMessage;
+        colors = parsed;
+      }
     } catch (e) {
-      console.log('Failed to parse AI colors, using defaults');
-      colors = null;
+      console.log('Could not parse colors from AI response');
     }
 
-    // Use AI colors or fallback to defaults
     const design = {
       primary: colors?.primaryColor || '#25a2ff',
       secondary: colors?.secondaryColor || '#093a3e',
@@ -494,11 +519,15 @@ IMPORTANT: Only return the JSON, nothing else.`
       headerBg: colors?.headerBg || '#25a2ff',
       text: colors?.textColor || '#093a3e',
       buttonColor: colors?.buttonColor || '#f5b801',
-      buttonTextColor: colors?.buttonTextColor || '#093a3e',
-      layout: colors?.layout || 'clean'
+      buttonTextColor: colors?.buttonTextColor || '#093a3e'
     };
 
-    // Generate HTML with EXACT job text (no AI modification to text)
+    // Fallback reply
+    if (!replyMessage) {
+      replyMessage = colors ? 'Tasarım güncellendi!' : 'Anlayamadım, biraz daha açıklar mısın?';
+    }
+
+    // Generate HTML with AI colors but FIXED job text
     const responsibilities = (job.responsibilities || []).slice(0, 4).map(r =>
       `<li>${r}</li>`
     ).join('') || '<li>Details will be provided</li>';
@@ -507,166 +536,41 @@ IMPORTANT: Only return the JSON, nothing else.`
       `<li>${q}</li>`
     ).join('') || '<li>Qualifications will be discussed</li>';
 
-    const dotsHTML = selectedDotStyle.length > 0 ? selectedDotStyle.map((color, i) =>
+    const dotsHTML = selectedDotStyle.length > 0 ? selectedDotStyle.map(color =>
       `<div class="dot" style="background: ${color};"></div>`
     ).join('') : '';
 
-    // Create template with AI colors but FIXED job text
     const html = `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
   <style>
-    @font-face {
-      font-family: 'PP Mori';
-      src: url(data:font/otf;base64,${FONTS['PPMori-SemiBold'] || ''}) format('opentype');
-      font-weight: 600;
-    }
-    @font-face {
-      font-family: 'PP Neue Montreal';
-      src: url(data:font/otf;base64,${FONTS['PPNeueMontreal-Medium'] || ''}) format('opentype');
-      font-weight: 500;
-    }
+    @font-face { font-family: 'PP Mori'; src: url(data:font/otf;base64,${FONTS['PPMori-SemiBold'] || ''}) format('opentype'); font-weight: 600; }
+    @font-face { font-family: 'PP Neue Montreal'; src: url(data:font/otf;base64,${FONTS['PPNeueMontreal-Medium'] || ''}) format('opentype'); font-weight: 500; }
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      width: 1080px;
-      height: 1080px;
-      font-family: 'PP Neue Montreal', sans-serif;
-      background: ${design.background};
-    }
-    .poster {
-      width: 1080px;
-      height: 1080px;
-      display: flex;
-      flex-direction: column;
-    }
-    .header {
-      background: ${design.headerBg};
-      padding: 40px 60px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .badge {
-      font-family: 'PP Mori', sans-serif;
-      font-size: 18px;
-      font-weight: 600;
-      color: white;
-      text-transform: uppercase;
-      letter-spacing: 2px;
-    }
-    .logo {
-      height: 45px;
-    }
-    .content {
-      flex: 1;
-      padding: 50px 60px;
-    }
-    .job-title {
-      font-family: 'PP Mori', sans-serif;
-      font-size: 52px;
-      font-weight: 600;
-      color: ${design.secondary};
-      margin-bottom: 10px;
-      line-height: 1.1;
-    }
-    .job-code {
-      font-size: 20px;
-      color: ${design.text};
-      opacity: 0.7;
-      margin-bottom: 30px;
-    }
-    .info-row {
-      display: flex;
-      gap: 40px;
-      margin-bottom: 30px;
-    }
-    .info-item {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-    .info-label {
-      font-size: 12px;
-      color: ${design.text};
-      opacity: 0.6;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
-    .info-value {
-      font-family: 'PP Mori', sans-serif;
-      font-size: 24px;
-      font-weight: 600;
-      color: ${design.primary};
-    }
-    .section {
-      margin-bottom: 24px;
-    }
-    .section-title {
-      font-family: 'PP Mori', sans-serif;
-      font-size: 14px;
-      font-weight: 600;
-      color: ${design.text};
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      margin-bottom: 12px;
-      opacity: 0.8;
-    }
-    .list {
-      list-style: none;
-      padding: 0;
-    }
-    .list li {
-      font-size: 16px;
-      color: ${design.text};
-      padding: 6px 0;
-      padding-left: 20px;
-      position: relative;
-    }
-    .list li::before {
-      content: "•";
-      color: ${design.accent};
-      font-weight: bold;
-      position: absolute;
-      left: 0;
-    }
-    .footer {
-      background: ${design.secondary};
-      padding: 30px 60px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .apply-btn {
-      background: ${design.buttonColor};
-      color: ${design.buttonTextColor};
-      font-family: 'PP Mori', sans-serif;
-      font-size: 18px;
-      font-weight: 600;
-      padding: 16px 40px;
-      border-radius: 8px;
-      text-transform: uppercase;
-    }
-    .footer-right {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-end;
-      gap: 12px;
-    }
-    .website {
-      color: white;
-      font-size: 14px;
-      opacity: 0.9;
-    }
-    .dots {
-      display: flex;
-      gap: 8px;
-    }
-    .dot {
-      width: 14px;
-      height: 14px;
-      border-radius: 50%;
-    }
+    body { width: 1080px; height: 1080px; font-family: 'PP Neue Montreal', sans-serif; background: ${design.background}; }
+    .poster { width: 1080px; height: 1080px; display: flex; flex-direction: column; }
+    .header { background: ${design.headerBg}; padding: 40px 60px; display: flex; justify-content: space-between; align-items: center; }
+    .badge { font-family: 'PP Mori', sans-serif; font-size: 18px; font-weight: 600; color: white; text-transform: uppercase; letter-spacing: 2px; }
+    .logo { height: 45px; }
+    .content { flex: 1; padding: 50px 60px; }
+    .job-title { font-family: 'PP Mori', sans-serif; font-size: 52px; font-weight: 600; color: ${design.secondary}; margin-bottom: 10px; line-height: 1.1; }
+    .job-code { font-size: 20px; color: ${design.text}; opacity: 0.7; margin-bottom: 30px; }
+    .info-row { display: flex; gap: 40px; margin-bottom: 30px; }
+    .info-item { display: flex; flex-direction: column; gap: 4px; }
+    .info-label { font-size: 12px; color: ${design.text}; opacity: 0.6; text-transform: uppercase; letter-spacing: 1px; }
+    .info-value { font-family: 'PP Mori', sans-serif; font-size: 24px; font-weight: 600; color: ${design.primary}; }
+    .section { margin-bottom: 24px; }
+    .section-title { font-family: 'PP Mori', sans-serif; font-size: 14px; font-weight: 600; color: ${design.text}; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; opacity: 0.8; }
+    .list { list-style: none; padding: 0; }
+    .list li { font-size: 16px; color: ${design.text}; padding: 6px 0 6px 20px; position: relative; }
+    .list li::before { content: "•"; color: ${design.accent}; font-weight: bold; position: absolute; left: 0; }
+    .footer { background: ${design.secondary}; padding: 30px 60px; display: flex; justify-content: space-between; align-items: center; }
+    .apply-btn { background: ${design.buttonColor}; color: ${design.buttonTextColor}; font-family: 'PP Mori', sans-serif; font-size: 18px; font-weight: 600; padding: 16px 40px; border-radius: 8px; text-transform: uppercase; }
+    .footer-right { display: flex; flex-direction: column; align-items: flex-end; gap: 12px; }
+    .website { color: white; font-size: 14px; opacity: 0.9; }
+    .dots { display: flex; gap: 8px; }
+    .dot { width: 14px; height: 14px; border-radius: 50%; }
   </style>
 </head>
 <body>
@@ -675,37 +579,17 @@ IMPORTANT: Only return the JSON, nothing else.`
       <div class="badge">We Are Hiring</div>
       <img src="data:image/png;base64,${LOGOS.dark || ''}" class="logo" alt="Sagan">
     </div>
-
     <div class="content">
       <h1 class="job-title">${job.title || 'Job Title'}</h1>
       ${job.jobCode ? `<div class="job-code">(${job.jobCode})</div>` : ''}
-
       <div class="info-row">
-        <div class="info-item">
-          <span class="info-label">Salary</span>
-          <span class="info-value">${job.salary || '$1,000 - $2,000'}</span>
-        </div>
-        <div class="info-item">
-          <span class="info-label">Location</span>
-          <span class="info-value">${job.location || 'Remote'}</span>
-        </div>
-        <div class="info-item">
-          <span class="info-label">Schedule</span>
-          <span class="info-value">${job.schedule || 'Full-time'}</span>
-        </div>
+        <div class="info-item"><span class="info-label">Salary</span><span class="info-value">${job.salary || 'TBD'}</span></div>
+        <div class="info-item"><span class="info-label">Location</span><span class="info-value">${job.location || 'Remote'}</span></div>
+        <div class="info-item"><span class="info-label">Schedule</span><span class="info-value">${job.schedule || 'Full-time'}</span></div>
       </div>
-
-      <div class="section">
-        <div class="section-title">Key Responsibilities</div>
-        <ul class="list">${responsibilities}</ul>
-      </div>
-
-      <div class="section">
-        <div class="section-title">Qualifications</div>
-        <ul class="list">${qualifications}</ul>
-      </div>
+      <div class="section"><div class="section-title">Key Responsibilities</div><ul class="list">${responsibilities}</ul></div>
+      <div class="section"><div class="section-title">Qualifications</div><ul class="list">${qualifications}</ul></div>
     </div>
-
     <div class="footer">
       <div class="apply-btn">Apply Now</div>
       <div class="footer-right">
@@ -731,12 +615,12 @@ IMPORTANT: Only return the JSON, nothing else.`
     res.json({
       success: true,
       image: imageBuffer.toString('base64'),
-      html: html,
+      reply: replyMessage,
       appliedColors: design
     });
 
   } catch (error) {
-    console.error('AI template error:', error);
+    console.error('AI chat error:', error);
     if (browser) await browser.close();
     res.status(500).json({ error: error.message });
   }

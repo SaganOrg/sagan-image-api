@@ -569,109 +569,161 @@ function showToast(message, type = '') {
   }, 3000);
 }
 
-// AI Template Generation
-const aiPromptEl = document.getElementById('aiPrompt');
-const aiGenerateBtn = document.getElementById('aiGenerateBtn');
+// ============================================
+// AI CHATBOT DESIGN ASSISTANT
+// ============================================
 
-// Enable AI button when there's text and a job selected
-aiPromptEl.addEventListener('input', updateAIButton);
+let aiChatHistory = [];     // conversation history
+let aiCurrentDesign = null; // current applied design
+let aiCurrentImage = null;  // current generated image base64
 
-function updateAIButton() {
-  const hasPrompt = aiPromptEl.value.trim().length > 10;
-  const hasJob = state.selectedJobs.size > 0;
-  aiGenerateBtn.disabled = !(hasPrompt && hasJob);
-}
-
-// Also update when job selection changes
+// Enable send button when a job is selected
 const originalUpdateSelectedInfo = updateSelectedInfo;
 updateSelectedInfo = function() {
   originalUpdateSelectedInfo();
-  updateAIButton();
+  const sendBtn = document.getElementById('aiSendBtn');
+  if (sendBtn) sendBtn.disabled = state.selectedJobs.size === 0;
 };
 
-aiGenerateBtn.addEventListener('click', generateAITemplate);
+function handleAIChatKey(event) {
+  if (event.key === 'Enter' && !event.shiftKey) {
+    event.preventDefault();
+    sendAIMessage();
+  }
+}
 
-async function generateAITemplate() {
-  const prompt = aiPromptEl.value.trim();
+async function sendAIMessage() {
+  const input = document.getElementById('aiChatInput');
+  const message = input.value.trim();
+  if (!message) return;
+
   const selectedJobData = state.jobs.filter(job => state.selectedJobs.has(job.id));
+  if (selectedJobData.length === 0) {
+    showToast('Önce bir iş ilanı seç', 'error');
+    return;
+  }
 
-  if (!prompt || selectedJobData.length === 0) return;
+  const job = selectedJobData[0];
+  input.value = '';
 
-  const job = selectedJobData[0]; // Use first selected job for preview
+  // Add user message to chat
+  addChatBubble(message, 'user');
 
-  aiGenerateBtn.disabled = true;
-  aiGenerateBtn.textContent = '✨ Generating...';
-
-  document.getElementById('aiPreview').innerHTML = `
-    <div class="loading">
-      <div class="spinner"></div>
-      <p>AI is creating your template...</p>
-    </div>
-  `;
+  // Disable send while loading
+  document.getElementById('aiSendBtn').disabled = true;
+  addChatBubble('...', 'ai', 'ai-typing');
 
   try {
-    const response = await fetch(`${API_URL}/api/ai-template`, {
+    const response = await fetch(`${API_URL}/api/ai-chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        prompt,
+        message,
+        history: aiChatHistory,
         job,
-        dotStyle: state.dotStyle
+        dotStyle: state.dotStyle,
+        currentDesign: aiCurrentDesign
       })
     });
 
+    // Remove typing indicator
+    const typing = document.querySelector('.ai-typing');
+    if (typing) typing.remove();
+
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Failed to generate');
+      const err = await response.json();
+      throw new Error(err.message || 'AI hatası');
     }
 
     const data = await response.json();
 
+    // Update chat history
+    aiChatHistory.push({ role: 'user', content: message });
+    aiChatHistory.push({ role: 'assistant', content: data.reply });
+
+    // Show AI reply in chat
+    addChatBubble(data.reply, 'ai');
+
+    // Update preview image
     if (data.image) {
-      state.aiTemplateHtml = data.html;
+      aiCurrentDesign = data.appliedColors;
+      aiCurrentImage = 'data:image/png;base64,' + data.image;
+
       const previewEl = document.getElementById('aiPreview');
       previewEl.classList.add('has-image');
-      previewEl.innerHTML = `
-        <img src="data:image/png;base64,${data.image}" alt="AI Generated Template">
-      `;
+      previewEl.innerHTML = `<img src="${aiCurrentImage}" alt="AI Design">`;
       document.getElementById('aiActions').style.display = 'flex';
-      showToast('Design generated!', 'success');
-    } else {
-      throw new Error('No image returned');
     }
 
   } catch (error) {
-    console.error('AI Error:', error);
-    document.getElementById('aiPreview').innerHTML = `
-      <div class="ai-placeholder">
-        <span>⚠️</span>
-        <p>${error.message || 'Failed to generate. Try again.'}</p>
-      </div>
-    `;
-    showToast('AI generation failed', 'error');
+    const typing = document.querySelector('.ai-typing');
+    if (typing) typing.remove();
+    addChatBubble('Bir hata oluştu: ' + error.message, 'ai');
+    console.error('AI chat error:', error);
   } finally {
-    aiGenerateBtn.disabled = false;
-    aiGenerateBtn.textContent = '✨ Generate Custom Template';
-    updateAIButton();
+    document.getElementById('aiSendBtn').disabled = state.selectedJobs.size === 0;
   }
 }
 
-function regenerateAI() {
-  generateAITemplate();
+function addChatBubble(text, sender, extraClass = '') {
+  const messages = document.getElementById('aiChatMessages');
+  const bubble = document.createElement('div');
+  bubble.className = `ai-chat-bubble ${sender === 'user' ? 'user-bubble' : 'ai-bubble'} ${extraClass}`;
+  bubble.textContent = text;
+  messages.appendChild(bubble);
+  messages.scrollTop = messages.scrollHeight;
 }
 
-function useAITemplate() {
-  if (!state.aiTemplateHtml) return;
+function resetAIChat() {
+  aiChatHistory = [];
+  aiCurrentDesign = null;
+  aiCurrentImage = null;
 
-  // For now, just download the generated image
-  const img = document.querySelector('#aiPreview img');
-  if (img) {
-    const link = document.createElement('a');
-    link.href = img.src;
-    link.download = 'sagan-custom-template.png';
-    link.click();
-    showToast('Template downloaded!', 'success');
-  }
+  document.getElementById('aiChatMessages').innerHTML = `
+    <div class="ai-chat-bubble ai-bubble">
+      Merhaba! Bir iş ilanı seç ve tasarım hakkında ne istediğini söyle. Örneğin: <em>"Koyu mavi arka plan, sarı maaş rengi"</em>
+    </div>
+  `;
+
+  const previewEl = document.getElementById('aiPreview');
+  previewEl.classList.remove('has-image');
+  previewEl.innerHTML = `
+    <div class="ai-placeholder">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+      </svg>
+      <p>Bir ilan seç ve tasarımını anlat</p>
+    </div>
+  `;
+  document.getElementById('aiActions').style.display = 'none';
+}
+
+function downloadAIImage() {
+  if (!aiCurrentImage) return;
+  const link = document.createElement('a');
+  link.href = aiCurrentImage;
+  link.download = 'sagan-ai-design.png';
+  link.click();
+  showToast('İndirildi!', 'success');
+}
+
+function saveAIToTemplates() {
+  if (!aiCurrentImage) return;
+  const selectedJobData = state.jobs.filter(job => state.selectedJobs.has(job.id));
+  const jobName = selectedJobData.length > 0 ? selectedJobData[0].title + ' (AI)' : 'AI Design';
+
+  const customTemplates = JSON.parse(localStorage.getItem('customTemplates') || '[]');
+  customTemplates.unshift({
+    id: 'custom_' + Date.now(),
+    name: jobName,
+    imageBase64: aiCurrentImage,
+    savedAt: new Date().toLocaleDateString('tr-TR'),
+    template: 'ai-chat',
+    dotStyle: state.dotStyle,
+    logoStyle: state.logoStyle
+  });
+  localStorage.setItem('customTemplates', JSON.stringify(customTemplates));
+  showToast('Templates\'e eklendi!', 'success');
 }
 
 // Post to LinkedIn via Make webhook
@@ -730,3 +782,8 @@ window.saveToTemplates = saveToTemplates;
 window.deleteCustomTemplate = deleteCustomTemplate;
 window.previewCustomTemplate = previewCustomTemplate;
 window.postToLinkedIn = postToLinkedIn;
+window.sendAIMessage = sendAIMessage;
+window.handleAIChatKey = handleAIChatKey;
+window.resetAIChat = resetAIChat;
+window.downloadAIImage = downloadAIImage;
+window.saveAIToTemplates = saveAIToTemplates;
