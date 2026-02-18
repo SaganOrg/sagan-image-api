@@ -1151,27 +1151,39 @@ app.post('/api/ai-template', async (req, res) => {
       });
     }
 
-    const systemPrompt = `You are an expert HTML/CSS designer specializing in LinkedIn job posting images.
-Generate a complete, standalone HTML template for a 1080x1080px job posting image.
+    const systemPrompt = `You are an expert HTML/CSS designer for Sagan Recruitment — a professional staffing agency.
+Generate a complete, standalone HTML template for a 1080x1080px LinkedIn job posting image.
+The design must always feel on-brand, polished, and professional.
+
+SAGAN BRAND COLORS (use ONLY these — do not invent new colors):
+  Primary Blue:   #25a2ff  ← main CTA, highlights, accents
+  Dark Teal:      #093a3e  ← headings, dark backgrounds
+  Cream:          #ede9e5  ← main background (light designs)
+  Accent Yellow:  #f5b801  ← optional highlight
+  Coral:          #ff7455  ← optional accent
+  Mint Green:     #73e491  ← optional accent
+  Purple:         #796aff  ← optional accent
+  Light Gray:     #ddd8d2  ← subtle boxes, dividers
+  White:          #ffffff
+  Dark text:      #1a1a1a or #2a2a2a
+
+For dark background designs: use #093a3e or a very dark shade of the above colors.
+NEVER use colors outside this palette.
 
 STRICT REQUIREMENTS:
 1. Use EXACTLY these placeholder variables (they will be replaced at runtime):
    - {{fontPPMoriSemiBold}} - base64 font data (PP Mori SemiBold)
    - {{fontPPMoriRegular}} - base64 font data (PP Mori Regular)
    - {{fontPPNeueMontreal}} - base64 font data (PP Neue Montreal)
-   - {{primary}} - primary brand color (e.g. #25a2ff)
-   - {{secondary}} - secondary color (e.g. #093a3e)
-   - {{background}} - background color
-   - {{accent}} - accent color
    - {{logoBase64}} - company logo (use as: <img src="data:image/png;base64,{{logoBase64}}" ...>)
    - {{jobTitle}} - the job title text
-   - {{salary}} - salary range text (ALREADY includes $ symbol, e.g. "$2,500 - $3,500" — do NOT add $ prefix separately)
+   - {{salary}} - salary range text (ALREADY includes $ symbol, e.g. "$2,500 - $3,500" — do NOT add $ prefix/icon)
    - {{location}} - location text
    - {{schedule}} - work schedule text
-   - {{jobCode}} - job reference code (MAY BE EMPTY — always wrap in a conditional like: <span>{{jobCode}}</span> with no label, or omit the label entirely)
+   - {{jobCode}} - job reference code (MAY BE EMPTY — show as plain text only, no "REF:" or "Code:" label)
    - {{responsibilities}} - HTML <li> items for responsibilities list
    - {{qualifications}} - HTML <li> items for qualifications list
-   - {{dot1Color}} through {{dot5Color}} - decorative dot colors
+   - {{dot1Color}} through {{dot5Color}} - decorative dot colors (use these as-is for any dot/circle decorations)
 
 2. Font setup (REQUIRED at top of <style>):
 @font-face {
@@ -1205,11 +1217,18 @@ STRICT REQUIREMENTS:
    - Footer URL:       13px–15px
    - Logo image height: 40px–52px
 
-5. Body must be exactly 1080x1080px with overflow hidden
-6. NO external image URLs (except for the logo placeholder above)
-7. All CSS must be inline in <style> tag
-8. Generate unique, creative design matching the user's description
-9. Return ONLY the HTML code, no explanation`;
+5. ALWAYS include:
+   - Sagan logo (top area, height 44-52px)
+   - "We are Hiring" or "Now Hiring" heading somewhere prominent
+   - Apply Now button or CTA (use #25a2ff or #f5b801)
+   - Website: www.saganrecruitment.com/career (small, footer area)
+   - Decorative dots using {{dot1Color}}–{{dot5Color}}
+
+6. Body must be exactly 1080x1080px with overflow hidden
+7. NO external image URLs (except for the logo placeholder above)
+8. All CSS must be inline in <style> tag
+9. Generate a unique layout matching the user's style request, but always within Sagan brand
+10. Return ONLY the HTML code, no explanation`;
 
     const claudeResponse = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',

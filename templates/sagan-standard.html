@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    @font-face {
+      font-family: 'PP Mori';
+      src: url(data:font/otf;base64,{{fontPPMoriSemiBold}}) format('opentype');
+      font-weight: 600;
+    }
+    @font-face {
+      font-family: 'PP Mori';
+      src: url(data:font/otf;base64,{{fontPPMoriRegular}}) format('opentype');
+      font-weight: 400;
+    }
+    @font-face {
+      font-family: 'PP Neue Montreal';
+      src: url(data:font/otf;base64,{{fontPPNeueMontreal}}) format('opentype');
+      font-weight: 500;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      width: 1080px;
+      height: 1080px;
+      background: #ede9e5;
+      font-family: 'PP Neue Montreal', sans-serif;
+      overflow: hidden;
+    }
+
+    .poster {
+      width: 1080px;
+      height: 1080px;
+      padding: 56px 64px 48px 64px;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    /* TOP ROW: logo + dots */
+    .top-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 36px;
+    }
+
+    .logo {
+      height: 48px;
+      width: auto;
+    }
+
+    .dots-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      width: 96px;
+    }
+
+    .dot {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+    }
+
+    /* HEADING */
+    .heading {
+      font-family: 'PP Mori', sans-serif;
+      font-size: 40px;
+      color: #093a3e;
+      margin-bottom: 12px;
+      line-height: 1.1;
+    }
+
+    .heading strong {
+      font-weight: 600;
+    }
+
+    .heading span {
+      font-weight: 400;
+    }
+
+    /* JOB TITLE */
+    .job-title {
+      font-family: 'PP Mori', sans-serif;
+      font-size: 46px;
+      font-weight: 600;
+      color: #093a3e;
+      text-transform: uppercase;
+      line-height: 1.1;
+      margin-bottom: 28px;
+    }
+
+    /* SALARY */
+    .salary-label {
+      font-family: 'PP Neue Montreal', sans-serif;
+      font-size: 16px;
+      font-weight: 500;
+      color: #555;
+      margin-bottom: 4px;
+    }
+
+    .salary-value {
+      font-family: 'PP Mori', sans-serif;
+      font-size: 38px;
+      font-weight: 600;
+      color: #093a3e;
+      margin-bottom: 20px;
+    }
+
+    /* META ROW: icons */
+    .meta-row {
+      display: flex;
+      gap: 32px;
+      align-items: center;
+      margin-bottom: 28px;
+    }
+
+    .meta-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 18px;
+      color: #093a3e;
+      font-weight: 500;
+    }
+
+    .meta-icon {
+      font-size: 18px;
+    }
+
+    /* CONTENT BOX */
+    .content-box {
+      background: #ddd8d2;
+      border-radius: 20px;
+      padding: 28px 32px;
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin-bottom: 32px;
+    }
+
+    .section-title {
+      font-family: 'PP Mori', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      color: #093a3e;
+      margin-bottom: 12px;
+    }
+
+    .section-list {
+      list-style: disc;
+      padding-left: 18px;
+    }
+
+    .section-list li {
+      font-size: 15px;
+      color: #2a2a2a;
+      line-height: 1.65;
+      margin-bottom: 2px;
+    }
+
+    /* FOOTER */
+    .footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .footer-url {
+      font-size: 15px;
+      color: #555;
+      line-height: 1.5;
+    }
+
+    .footer-url span {
+      display: block;
+      font-size: 13px;
+      color: #888;
+    }
+
+    .apply-btn {
+      background: #25a2ff;
+      color: white;
+      font-family: 'PP Mori', sans-serif;
+      font-size: 20px;
+      font-weight: 600;
+      padding: 18px 48px;
+      border-radius: 50px;
+    }
+  </style>
+</head>
+<body>
+  <div class="poster">
+
+    <!-- Top row -->
+    <div class="top-row">
+      <img src="data:image/png;base64,{{logoBase64}}" class="logo" alt="Sagan">
+      <div class="dots-grid">
+        <div class="dot" style="background:{{dot1Color}}"></div>
+        <div class="dot" style="background:{{dot2Color}}"></div>
+        <div class="dot" style="background:{{dot3Color}}"></div>
+        <div class="dot" style="background:{{dot4Color}}"></div>
+        <div class="dot" style="background:{{dot5Color}}"></div>
+        <div class="dot" style="background:#796aff"></div>
+      </div>
+    </div>
+
+    <!-- Heading -->
+    <div class="heading">
+      <span>We are </span><strong>Hiring</strong>
+    </div>
+
+    <!-- Job Title -->
+    <div class="job-title">{{jobTitle}}<span style="font-weight:400;font-size:36px;"> ({{jobCode}})</span></div>
+
+    <!-- Salary -->
+    <div class="salary-label">Salary Range:</div>
+    <div class="salary-value">{{salary}} per month</div>
+
+    <!-- Meta -->
+    <div class="meta-row">
+      <div class="meta-item"><span class="meta-icon">🏠</span> {{location}}</div>
+      <div class="meta-item"><span class="meta-icon">🕐</span> {{schedule}}</div>
+      <div class="meta-item"><span class="meta-icon">💼</span> Full-Time</div>
+    </div>
+
+    <!-- Content box -->
+    <div class="content-box">
+      <div>
+        <div class="section-title">Key Responsibilities</div>
+        <ul class="section-list">{{responsibilities}}</ul>
+      </div>
+      <div>
+        <div class="section-title">Qualifications</div>
+        <ul class="section-list">{{qualifications}}</ul>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      <div class="footer-url">
+        <span>Visit Our Website to Apply:</span>
+        www.saganrecruitment.com/career
+      </div>
+      <div class="apply-btn">Apply Now →</div>
+    </div>
+
+  </div>
+</body>
+</html>
