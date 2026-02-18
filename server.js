@@ -1180,16 +1180,36 @@ STRICT REQUIREMENTS:
   font-weight: 600;
 }
 @font-face {
+  font-family: 'PP Mori';
+  src: url(data:font/otf;base64,{{fontPPMoriRegular}}) format('opentype');
+  font-weight: 400;
+}
+@font-face {
   font-family: 'PP Neue Montreal';
   src: url(data:font/otf;base64,{{fontPPNeueMontreal}}) format('opentype');
   font-weight: 500;
 }
 
-3. Body must be exactly 1080x1080px with overflow hidden
-4. NO external image URLs (except for the logo placeholder above)
-5. All CSS must be inline in <style> tag
-6. Generate unique, creative design matching the user's description
-7. Return ONLY the HTML code, no explanation`;
+3. FONT HIERARCHY (follow this strictly):
+   - PP Mori SemiBold (font-weight:600) → job title, section headers, buttons, badges, apply text
+   - PP Mori Regular (font-weight:400) → sub-headings, labels
+   - PP Neue Montreal (font-weight:500) → body text, list items, meta info, salary value, location, schedule
+
+4. FONT SIZE SCALE (1080x1080px canvas — use these sizes):
+   - Job Title:        48px–60px  (PP Mori, weight 600)
+   - Section Labels:   12px–14px  (uppercase, letter-spacing 1-2px)
+   - Salary Value:     28px–36px  (PP Mori, weight 600, use {{primary}} color)
+   - Location/Schedule: 20px–24px (PP Neue Montreal)
+   - List items:       15px–18px  (PP Neue Montreal, line-height 1.6)
+   - Badge/Button text: 16px–20px (PP Mori, weight 600, uppercase)
+   - Footer URL:       13px–15px
+   - Logo image height: 40px–52px
+
+5. Body must be exactly 1080x1080px with overflow hidden
+6. NO external image URLs (except for the logo placeholder above)
+7. All CSS must be inline in <style> tag
+8. Generate unique, creative design matching the user's description
+9. Return ONLY the HTML code, no explanation`;
 
     const claudeResponse = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
