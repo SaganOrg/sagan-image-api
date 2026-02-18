@@ -632,7 +632,7 @@ async function sendAIMessage() {
 
     if (!response.ok) {
       const err = await response.json();
-      throw new Error(err.message || 'AI hatası');
+      throw new Error(err.message || err.error || 'AI hatası');
     }
 
     const data = await response.json();

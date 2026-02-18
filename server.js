@@ -472,14 +472,20 @@ KURALLAR:
       parts: [{ text: message }]
     });
 
+    // Prepend system context as first model turn (more compatible approach)
+    const fullContents = [
+      { role: 'user', parts: [{ text: 'Sistem talimatları: ' + systemPrompt }] },
+      { role: 'model', parts: [{ text: 'Anlaşıldı, tasarım asistanı olarak yardımcı olacağım. JSON formatında renk önerileri sunacağım.' }] },
+      ...geminiContents
+    ];
+
     const geminiResponse = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          system_instruction: { parts: [{ text: systemPrompt }] },
-          contents: geminiContents,
+          contents: fullContents,
           generationConfig: { temperature: 0.7, maxOutputTokens: 1024 }
         })
       }
@@ -487,8 +493,8 @@ KURALLAR:
 
     if (!geminiResponse.ok) {
       const err = await geminiResponse.json();
-      console.error('Gemini error:', err);
-      throw new Error('Gemini API error: ' + (err.error?.message || 'Unknown'));
+      console.error('Gemini error:', JSON.stringify(err));
+      throw new Error('Gemini API error: ' + (err.error?.message || JSON.stringify(err)));
     }
 
     const geminiData = await geminiResponse.json();
