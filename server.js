@@ -1219,11 +1219,17 @@ STRICT REQUIREMENTS:
     const claudeData = await claudeResponse.json();
     let generatedHtml = claudeData.content[0].text;
 
-    // Extract HTML if wrapped in code block
-    const htmlMatch = generatedHtml.match(/```html\n?([\s\S]*?)\n?```/) || generatedHtml.match(/```\n?([\s\S]*?)\n?```/);
-    if (htmlMatch) {
-      generatedHtml = htmlMatch[1];
+    // Strip markdown code block markers robustly
+    generatedHtml = generatedHtml.trim();
+    if (generatedHtml.startsWith('```html')) {
+      generatedHtml = generatedHtml.slice(7);
+    } else if (generatedHtml.startsWith('```')) {
+      generatedHtml = generatedHtml.slice(3);
     }
+    if (generatedHtml.endsWith('```')) {
+      generatedHtml = generatedHtml.slice(0, -3);
+    }
+    generatedHtml = generatedHtml.trim();
 
     // Save the generated template to disk
     const safeTemplateName = templateName.replace(/[^a-z0-9-]/gi, '-').toLowerCase() || 'ai-custom';
