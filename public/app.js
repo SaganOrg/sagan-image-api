@@ -785,7 +785,9 @@ const aiSelections = {
   emphasis: 'balanced',
   palette: 'classic',
   logoStyle: 'dark',
-  dotStyle: 'default'
+  dotStyle: 'default',
+  background: 'cream',
+  decoration: 'none'
 };
 
 // Palette descriptions for prompt building
@@ -819,14 +821,31 @@ const EMPHASIS_PROMPTS = {
   'title':    'The job title should be the most visually dominant element — very large, full-width.'
 };
 
+const BACKGROUND_PROMPTS = {
+  'cream': 'Background color: #ede9e5 (Sagan warm cream — the classic brand background).',
+  'white': 'Background color: #ffffff (clean white — bright and airy).',
+  'dark':  'Background color: #093a3e (Sagan dark teal — premium, sophisticated dark look). Use light/white text throughout.',
+  'blue':  'Background color: a deep professional blue (#0d2b4e or #1a3f6f). Use white text throughout.'
+};
+
+const DECORATION_PROMPTS = {
+  'none':           '',
+  'side-blocks':    'RIGHT SIDE DECORATION (important): Absolutely position 4–5 tall rounded pill shapes (border-radius: 40px) stacked vertically on the right edge of the poster, each about 75px wide and 190px tall. Use these Sagan colors in order: #73e491, #25a2ff, #ff7455, #f5b801, #796aff. Let them overlap the right edge slightly (right: -20px). This is a signature Sagan visual element — make it prominent.',
+  'corner-circles': 'CORNER DECORATION (important): Place 3–4 large colored circles (120–160px diameter) in the top-right corner, partially overlapping each other and the poster edge. Use Sagan brand colors: #73e491, #f5b801, #25a2ff, #ff7455. Also place 2–3 smaller circles (60–80px) in the bottom-right corner. Use absolute positioning.',
+  'color-bar':      'BOTTOM BAR DECORATION (important): Add a full-width solid colored bar at the very bottom of the poster, about 90px tall. Use Sagan blue (#25a2ff) or yellow (#f5b801). Place the website URL and "Apply Now →" button inside this bar on a single row.',
+  'watermark':      'BACKGROUND WATERMARK (important): Place the word "SAGAN" as a very large (300–400px font-size) watermark text in the background behind all content. Use a very low opacity (0.05–0.08) version of the primary color. Rotate it slightly (-15deg) or place it vertically along one side.'
+};
+
 function buildAIPrompt() {
   const extraNote = document.getElementById('aiTemplatePrompt').value.trim();
+  const decorationPrompt = DECORATION_PROMPTS[aiSelections.decoration];
   const parts = [
-    COLOR_TONE_PROMPTS[aiSelections.colorTone],
-    STYLE_PROMPTS[aiSelections.style],
     `Color palette: ${PALETTE_PROMPTS[aiSelections.palette]}`,
+    BACKGROUND_PROMPTS[aiSelections.background],
+    STYLE_PROMPTS[aiSelections.style],
     EMPHASIS_PROMPTS[aiSelections.emphasis]
   ];
+  if (decorationPrompt) parts.push(decorationPrompt);
   if (extraNote) parts.push(`Additional request: ${extraNote}`);
   return parts.join(' ');
 }

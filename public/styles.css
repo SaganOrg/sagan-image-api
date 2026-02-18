@@ -1188,6 +1188,20 @@ select:focus {
   color: white;
 }
 
+.bg-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.bg-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: inline-block;
+}
+
 /* Palette Cards */
 .palette-grid {
   display: grid;
