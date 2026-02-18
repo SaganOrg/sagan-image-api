@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sagan Image Generator</title>
-  <link rel="stylesheet" href="styles.css?v=8">
+  <link rel="stylesheet" href="styles.css?v=9">
 </head>
 <body>
   <div class="app">
@@ -66,18 +66,30 @@
               </div>
             </div>
 
-            <!-- Template Selection -->
-            <div class="option-group">
+            <!-- Single Template Selection -->
+            <div class="option-group" id="singleTemplateGroup">
               <label>Template</label>
               <select id="templateSelect">
                 <option value="catalog-1">Catalog 1 - Clean Card</option>
                 <option value="catalog-2">Catalog 2 - Split Design</option>
                 <option value="catalog-3">Catalog 3 - Bold</option>
-                <option value="modern-clean">Modern Clean</option>
                 <option value="diagonal">Diagonal</option>
                 <option value="waves">Waves</option>
-                <option value="bold-gradient">Bold Gradient</option>
                 <option value="split-screen">Split Screen</option>
+              </select>
+            </div>
+
+            <!-- Carousel Template Selection -->
+            <div class="option-group" id="carouselTemplateGroup" style="display:none;">
+              <label>Cover Template <span class="template-tag">Kapak</span></label>
+              <select id="carouselCoverSelect">
+                <option value="cover-default">Default Cover (WE ARE HIRING)</option>
+              </select>
+
+              <label style="margin-top:16px;">Slide Template <span class="template-tag">Her İlan</span></label>
+              <select id="carouselDetailSelect">
+                <option value="modern-clean">Modern Clean</option>
+                <option value="bold-gradient">Bold Gradient</option>
               </select>
             </div>
 
@@ -243,6 +255,6 @@
     <div class="toast" id="toast"></div>
   </div>
 
-  <script src="app.js?v=8"></script>
+  <script src="app.js?v=9"></script>
 </body>
 </html>

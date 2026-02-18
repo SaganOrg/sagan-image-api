@@ -286,7 +286,7 @@ app.post('/generate-carousel', async (req, res) => {
 
   try {
     console.log('Generating carousel...');
-    const { jobs = [], dotStyle = 'default', logoStyle = 'dark' } = req.body;
+    const { jobs = [], dotStyle = 'default', logoStyle = 'dark', detailTemplate = 'modern-clean' } = req.body;
 
     if (jobs.length === 0) {
       return res.status(400).json({ error: 'No jobs provided' });
@@ -310,15 +310,64 @@ app.post('/generate-carousel', async (req, res) => {
     images.cover = coverBuffer.toString('base64');
     console.log('Cover generated');
 
-    // Generate DETAIL images for each job
+    // Generate DETAIL images for each job using selected template
+    const detailTemplatePath = path.join(__dirname, 'templates', `${detailTemplate}.html`);
+    const detailTemplateExists = fs.existsSync(detailTemplatePath);
+
     for (let i = 0; i < jobs.length; i++) {
       const job = jobs[i];
-      const detailHtml = generateCarouselDetailHTML(job, selectedDotStyle, selectedLogo);
+      let detailHtml;
+
+      if (detailTemplateExists) {
+        // Use actual template file
+        detailHtml = fs.readFileSync(detailTemplatePath, 'utf8');
+        detailHtml = detailHtml.replace(/\{\{primary\}\}/g, THEME.primary);
+        detailHtml = detailHtml.replace(/\{\{secondary\}\}/g, THEME.secondary);
+        detailHtml = detailHtml.replace(/\{\{background\}\}/g, THEME.background);
+        detailHtml = detailHtml.replace(/\{\{accent\}\}/g, THEME.accent);
+        detailHtml = detailHtml.replace(/\{\{logoBase64\}\}/g, selectedLogo);
+        detailHtml = detailHtml.replace(/\{\{logoLightBase64\}\}/g, selectedLogo);
+        detailHtml = detailHtml.replace(/\{\{logoBlueBase64\}\}/g, selectedLogo);
+        detailHtml = detailHtml.replace(/\{\{fontPPMoriSemiBold\}\}/g, FONTS['PPMori-SemiBold'] || '');
+        detailHtml = detailHtml.replace(/\{\{fontPPMoriRegular\}\}/g, FONTS['PPMori-Regular'] || '');
+        detailHtml = detailHtml.replace(/\{\{fontPPMoriBook\}\}/g, FONTS['PPMori-Book'] || '');
+        detailHtml = detailHtml.replace(/\{\{fontPPNeueMontreal\}\}/g, FONTS['PPNeueMontreal-Medium'] || '');
+        detailHtml = selectedDotStyle.length >= 5
+          ? detailHtml
+            .replace(/\{\{dot1Color\}\}/g, selectedDotStyle[0])
+            .replace(/\{\{dot2Color\}\}/g, selectedDotStyle[1])
+            .replace(/\{\{dot3Color\}\}/g, selectedDotStyle[2])
+            .replace(/\{\{dot4Color\}\}/g, selectedDotStyle[3])
+            .replace(/\{\{dot5Color\}\}/g, selectedDotStyle[4])
+          : detailHtml
+            .replace(/\{\{dot\dColor\}\}/g, 'transparent');
+        detailHtml = detailHtml.replace(/\{\{jobTitle\}\}/g, job.title || 'Job Title');
+        detailHtml = detailHtml.replace(/\{\{salary\}\}/g, job.salary || 'TBD');
+        detailHtml = detailHtml.replace(/\{\{location\}\}/g, job.location || 'Remote');
+        detailHtml = detailHtml.replace(/\{\{schedule\}\}/g, job.schedule || 'Full-time');
+        detailHtml = detailHtml.replace(/\{\{jobCode\}\}/g, job.jobCode || '');
+        const respHTML = (job.responsibilities || []).map(r => `<li>${r}</li>`).join('') || '<li>Details to be discussed</li>';
+        const qualHTML = (job.qualifications || []).map(q => `<li>${q}</li>`).join('') || '<li>Qualifications to be discussed</li>';
+        detailHtml = detailHtml.replace(/\{\{responsibilities\}\}/g, respHTML);
+        detailHtml = detailHtml.replace(/\{\{qualifications\}\}/g, qualHTML);
+        detailHtml = detailHtml.replace(/\{\{requirementPills\}\}/g,
+          (job.qualifications || []).slice(0, 4).map(q => `<div class="req-pill req-item skill skill-tag">${q}</div>`).join('') || '<div class="req-pill req-item skill skill-tag">Experience required</div>'
+        );
+        detailHtml = detailHtml.replace(/\{\{keyPoints\}\}/g, '');
+        detailHtml = detailHtml.replace(/\{\{personPhotoUrl\}\}/g, randomChoice(PERSON_PHOTOS));
+        detailHtml = detailHtml.replace(/\{\{responsibilitiesList\}\}/g, respHTML);
+        detailHtml = detailHtml.replace(/\{\{qualificationsList\}\}/g, qualHTML);
+        detailHtml = detailHtml.replace(/\{\{jobItems\}\}/g, '');
+      } else {
+        // Fallback to hardcoded
+        detailHtml = generateCarouselDetailHTML(job, selectedDotStyle, selectedLogo);
+      }
+
       await page.setContent(detailHtml, { waitUntil: 'load' });
       await page.waitForTimeout(500);
       const detailBuffer = await page.screenshot({ type: 'png' });
       images.details.push(detailBuffer.toString('base64'));
-      console.log(`Detail ${i + 1} generated`);
+      console.log(`Detail ${i + 1} generated with template: ${detailTemplate}`);
     }
 
     await browser.close();

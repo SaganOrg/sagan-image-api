@@ -7,6 +7,7 @@ let state = {
   jobs: [],
   selectedJobs: new Set(),
   template: 'catalog-1',
+  carouselDetailTemplate: 'modern-clean',
   dotStyle: 'default',
   logoStyle: 'dark',
   outputType: 'single',
@@ -50,9 +51,16 @@ function initToggle() {
       document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       state.outputType = btn.dataset.type;
+      updateTemplateVisibility();
       updateSelectedInfo();
     });
   });
+}
+
+function updateTemplateVisibility() {
+  const isCarousel = state.outputType === 'carousel';
+  document.getElementById('singleTemplateGroup').style.display = isCarousel ? 'none' : 'block';
+  document.getElementById('carouselTemplateGroup').style.display = isCarousel ? 'block' : 'none';
 }
 
 // Dot Style
@@ -79,9 +87,11 @@ function initLogoStyle() {
 
 // Template Select
 function initTemplateSelect() {
-  const select = document.getElementById('templateSelect');
-  select.addEventListener('change', () => {
-    state.template = select.value;
+  document.getElementById('templateSelect').addEventListener('change', (e) => {
+    state.template = e.target.value;
+  });
+  document.getElementById('carouselDetailSelect').addEventListener('change', (e) => {
+    state.carouselDetailTemplate = e.target.value;
   });
 }
 
@@ -312,7 +322,8 @@ async function generateImages() {
         body: JSON.stringify({
           jobs: selectedJobData,
           dotStyle: state.dotStyle,
-          logoStyle: state.logoStyle
+          logoStyle: state.logoStyle,
+          detailTemplate: state.carouselDetailTemplate
         })
       });
 
