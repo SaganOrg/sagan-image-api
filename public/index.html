@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sagan Image Generator</title>
-  <link rel="stylesheet" href="styles.css?v=10">
+  <link rel="stylesheet" href="styles.css?v=11">
 </head>
 <body>
   <div class="app">
@@ -16,6 +16,7 @@
       <nav class="nav">
         <button class="nav-btn active" data-page="generate">Generate Images</button>
         <button class="nav-btn" data-page="templates">Templates</button>
+        <button class="nav-btn" data-page="ai-template">AI Template</button>
       </nav>
     </header>
 
@@ -73,9 +74,27 @@
                 <option value="catalog-1">Catalog 1 - Clean Card</option>
                 <option value="catalog-2">Catalog 2 - Split Design</option>
                 <option value="catalog-3">Catalog 3 - Bold</option>
+                <option value="modern-clean">Modern Clean</option>
                 <option value="diagonal">Diagonal</option>
                 <option value="waves">Waves</option>
+                <option value="bold-gradient">Bold Gradient</option>
+                <option value="bold-split">Bold Split</option>
                 <option value="split-screen">Split Screen</option>
+                <option value="spotlight">Spotlight</option>
+                <option value="minimal-card">Minimal Card</option>
+                <option value="minimal-zen">Minimal Zen</option>
+                <option value="single-job">Single Job</option>
+                <option value="single-job-minimal">Single Job Minimal</option>
+                <option value="sagan-branded">Sagan Branded</option>
+                <option value="magazine">Magazine</option>
+                <option value="geometric">Geometric</option>
+                <option value="glassmorphism">Glassmorphism</option>
+                <option value="neon-card">Neon Card</option>
+                <option value="brutalist">Brutalist</option>
+                <option value="creative">Creative</option>
+                <option value="catalog-multi">Catalog Multi (Multi-Job)</option>
+                <option value="multi-job">Multi Job</option>
+                <option value="search-style">Search Style (Multi-Job)</option>
               </select>
             </div>
 
@@ -84,13 +103,17 @@
               <label>Cover Template <span class="template-tag">Cover</span></label>
               <select id="carouselCoverSelect">
                 <option value="cover-default">Default Cover (WE ARE HIRING)</option>
-                <option value="bold-gradient">Bold Gradient Cover</option>
+                <option value="carousel-cover">Carousel Cover (Modern)</option>
+                <option value="bold-gradient">Bold Gradient</option>
               </select>
 
               <label style="margin-top:16px;">Slide Template <span class="template-tag">Per Job</span></label>
               <select id="carouselDetailSelect">
+                <option value="carousel-detail">Carousel Detail (Modern)</option>
                 <option value="modern-clean">Modern Clean</option>
                 <option value="bold-gradient">Bold Gradient</option>
+                <option value="catalog-1">Catalog 1</option>
+                <option value="sagan-branded">Sagan Branded</option>
               </select>
             </div>
 
@@ -233,6 +256,75 @@
           <!-- Templates will be loaded here -->
         </div>
       </section>
+
+      <!-- AI Template Page -->
+      <section class="page" id="page-ai-template">
+        <div class="ai-template-page">
+          <div class="ai-template-left">
+            <div class="panel">
+              <div class="panel-header">
+                <h2>AI Template Generator</h2>
+              </div>
+              <div class="ai-template-form">
+                <div class="ai-template-field">
+                  <label>Template Name</label>
+                  <input type="text" id="aiTemplateName" placeholder="e.g. purple-minimal" maxlength="40">
+                </div>
+                <div class="ai-template-field">
+                  <label>Describe your template</label>
+                  <textarea id="aiTemplatePrompt" rows="6"
+                    placeholder="Describe the style, colors, layout... e.g.:
+
+Minimalist design with purple gradient background. White text, gold accents. Job title large on the left, clean info boxes on the right. Modern sans-serif typography. Abstract geometric shapes in corners."></textarea>
+                </div>
+                <div class="ai-template-examples">
+                  <div class="examples-label">Quick examples:</div>
+                  <div class="examples-chips">
+                    <button class="example-chip" onclick="fillExample('Dark navy background with neon green accents. Futuristic, tech-inspired look. Job title in large bold font.')">Dark Neon</button>
+                    <button class="example-chip" onclick="fillExample('Warm sunset gradient from orange to pink. Clean white text. Elegant and professional with rounded elements.')">Sunset Warm</button>
+                    <button class="example-chip" onclick="fillExample('Clean white background with subtle gray elements. Minimalist Swiss-style typography. Blue salary highlight.')">Clean Minimal</button>
+                    <button class="example-chip" onclick="fillExample('Bold black and yellow design. High contrast, editorial magazine style. Large typography.')">Bold Magazine</button>
+                  </div>
+                </div>
+                <button class="btn-generate" id="aiTemplateGenBtn" onclick="generateAITemplate()">
+                  Generate Template with AI
+                </button>
+                <div class="ai-template-note">
+                  Generated templates are saved and appear in the Template Gallery
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="ai-template-right">
+            <div class="panel ai-template-preview-panel">
+              <div class="panel-header">
+                <h2>Preview</h2>
+                <div id="aiTemplatePreviewActions" style="display:none;">
+                  <button class="btn-secondary" style="padding:8px 16px;font-size:14px;" onclick="downloadAITemplatePreview()">Download</button>
+                </div>
+              </div>
+              <div class="ai-template-preview-wrap" id="aiTemplatePreviewWrap">
+                <div class="ai-placeholder" style="min-height:400px;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#b0b8c4;gap:16px;">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="48" height="48">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                  </svg>
+                  <p style="font-size:15px;">AI-generated preview will appear here</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="panel ai-template-history-panel">
+              <div class="panel-header">
+                <h2>Recently Generated</h2>
+              </div>
+              <div class="ai-template-history" id="aiTemplateHistory">
+                <div style="padding:24px;color:#999;font-size:14px;text-align:center;">No templates generated yet</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
     </main>
 
     <!-- Result Modal -->
@@ -256,6 +348,6 @@
     <div class="toast" id="toast"></div>
   </div>
 
-  <script src="app.js?v=10"></script>
+  <script src="app.js?v=11"></script>
 </body>
 </html>

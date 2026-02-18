@@ -8,7 +8,7 @@ let state = {
   selectedJobs: new Set(),
   template: 'catalog-1',
   carouselCoverTemplate: 'cover-default',
-  carouselDetailTemplate: 'modern-clean',
+  carouselDetailTemplate: 'carousel-detail',
   dotStyle: 'default',
   logoStyle: 'dark',
   outputType: 'single',
@@ -37,9 +37,11 @@ function initNavigation() {
       document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
       document.getElementById(`page-${page}`).classList.add('active');
 
-      // Reload templates when switching to templates tab (picks up newly saved)
       if (page === 'templates') {
         loadTemplates();
+      }
+      if (page === 'ai-template') {
+        loadAITemplateHistory();
       }
     });
   });
@@ -112,7 +114,6 @@ async function loadJobs() {
       state.jobs = data.jobs;
       renderJobs();
     } else {
-      // Load demo data
       state.jobs = getDemoJobs();
       renderJobs();
       showToast('Using demo data. Configure Airtable for live jobs.', 'warning');
@@ -134,8 +135,8 @@ function getDemoJobs() {
       salary: '$1,300 - $1,600',
       location: '100% Remote',
       schedule: 'M-F, 9AM-6PM PST',
-      responsibilities: ['Manage AR/AP processes', 'Handle invoicing'],
-      qualifications: ['2+ years experience', 'Detail-oriented']
+      responsibilities: ['Manage AR/AP processes', 'Handle invoicing', 'Reconcile accounts'],
+      qualifications: ['2+ years experience', 'Detail-oriented', 'QuickBooks knowledge']
     },
     {
       id: '2',
@@ -144,8 +145,8 @@ function getDemoJobs() {
       salary: '$2,500 - $3,500',
       location: '100% Remote',
       schedule: 'M-F, 9AM-5PM EST',
-      responsibilities: ['Lead marketing campaigns', 'Manage team'],
-      qualifications: ['5+ years experience', 'MBA preferred']
+      responsibilities: ['Lead marketing campaigns', 'Manage team', 'Analyze performance'],
+      qualifications: ['5+ years experience', 'MBA preferred', 'Digital marketing skills']
     },
     {
       id: '3',
@@ -154,8 +155,8 @@ function getDemoJobs() {
       salary: '$1,200 - $1,800',
       location: '100% Remote',
       schedule: 'Flexible',
-      responsibilities: ['Edit promotional videos', 'Create content'],
-      qualifications: ['Adobe Premiere Pro', 'Portfolio required']
+      responsibilities: ['Edit promotional videos', 'Create content', 'Color grading'],
+      qualifications: ['Adobe Premiere Pro', 'Portfolio required', 'Motion graphics a plus']
     },
     {
       id: '4',
@@ -164,8 +165,8 @@ function getDemoJobs() {
       salary: '$2,500 - $3,000',
       location: '100% Remote',
       schedule: 'M-F, 8AM-5PM PST',
-      responsibilities: ['Calendar management', 'Travel coordination'],
-      qualifications: ['3+ years EA experience', 'Excellent communication']
+      responsibilities: ['Calendar management', 'Travel coordination', 'Meeting prep'],
+      qualifications: ['3+ years EA experience', 'Excellent communication', 'Discretion']
     },
     {
       id: '5',
@@ -174,8 +175,8 @@ function getDemoJobs() {
       salary: '$1,500 - $2,000',
       location: '100% Remote',
       schedule: 'M-F, 9AM-6PM EST',
-      responsibilities: ['Process payroll', 'Tax filings'],
-      qualifications: ['Payroll experience', 'Attention to detail']
+      responsibilities: ['Process payroll', 'Tax filings', 'Benefits administration'],
+      qualifications: ['Payroll experience', 'Attention to detail', 'ADP or Gusto preferred']
     }
   ];
 }
@@ -194,8 +195,8 @@ function renderJobs(searchQuery = '') {
   if (searchQuery) {
     filteredJobs = state.jobs.filter(job =>
       job.title.toLowerCase().includes(searchQuery) ||
-      job.salary.toLowerCase().includes(searchQuery) ||
-      job.location.toLowerCase().includes(searchQuery)
+      (job.salary || '').toLowerCase().includes(searchQuery) ||
+      (job.location || '').toLowerCase().includes(searchQuery)
     );
   }
 
@@ -236,7 +237,6 @@ function toggleJob(id) {
     state.selectedJobs.add(id);
   }
 
-  // Update UI
   document.querySelectorAll('.job-card').forEach(card => {
     card.classList.toggle('selected', state.selectedJobs.has(card.dataset.id));
   });
@@ -283,8 +283,10 @@ function updateSelectedInfo() {
   const count = state.selectedJobs.size;
   const info = document.getElementById('selectedInfo');
   const btn = document.getElementById('generateBtn');
-
   const linkedinBtn = document.getElementById('linkedinBtn');
+  const sendBtn = document.getElementById('aiSendBtn');
+
+  if (sendBtn) sendBtn.disabled = count === 0;
 
   if (count === 0) {
     info.textContent = 'Select jobs to generate images';
@@ -319,7 +321,6 @@ async function generateImages() {
 
   try {
     if (state.outputType === 'carousel') {
-      // Generate carousel
       const response = await fetch(`${API_URL}/generate-carousel`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -344,7 +345,6 @@ async function generateImages() {
       showToast(`Generated ${state.generatedImages.length} images!`, 'success');
 
     } else {
-      // Generate single images
       state.generatedImages = [];
 
       for (const job of selectedJobData) {
@@ -427,12 +427,11 @@ function saveToTemplates(index, jobName) {
     logoStyle: state.logoStyle
   };
 
-  customTemplates.unshift(newTemplate); // newest first
+  customTemplates.unshift(newTemplate);
   localStorage.setItem('customTemplates', JSON.stringify(customTemplates));
 
   showToast('Saved to Templates!', 'success');
 
-  // If on templates page, refresh it
   if (document.getElementById('page-templates').classList.contains('active')) {
     loadTemplates();
   }
@@ -457,24 +456,36 @@ function downloadAll() {
   showToast('Downloading all images...', 'success');
 }
 
-// Load Templates
-function loadTemplates() {
+// ============================================
+// TEMPLATE GALLERY
+// ============================================
+
+async function loadTemplates() {
   const hiddenTemplates = JSON.parse(localStorage.getItem('hiddenTemplates') || '[]');
   const customTemplates = JSON.parse(localStorage.getItem('customTemplates') || '[]');
-
-  const allTemplates = [
-    { id: 'catalog-1', name: 'Catalog 1' },
-    { id: 'catalog-2', name: 'Catalog 2' },
-    { id: 'catalog-3', name: 'Catalog 3' },
-    { id: 'modern-clean', name: 'Modern Clean' },
-    { id: 'diagonal', name: 'Diagonal' },
-    { id: 'waves', name: 'Waves' },
-    { id: 'bold-gradient', name: 'Bold Gradient' },
-    { id: 'split-screen', name: 'Split Screen' }
-  ];
-
-  const templates = allTemplates.filter(t => !hiddenTemplates.includes(t.id));
   const grid = document.getElementById('templatesGrid');
+
+  // Load templates from server
+  let serverTemplates = [];
+  try {
+    const resp = await fetch(`${API_URL}/api/templates`);
+    const data = await resp.json();
+    serverTemplates = data.templates || [];
+  } catch (e) {
+    // Fallback list
+    serverTemplates = [
+      { id: 'catalog-1', name: 'Catalog 1' },
+      { id: 'catalog-2', name: 'Catalog 2' },
+      { id: 'catalog-3', name: 'Catalog 3' },
+      { id: 'modern-clean', name: 'Modern Clean' },
+      { id: 'diagonal', name: 'Diagonal' },
+      { id: 'waves', name: 'Waves' },
+      { id: 'bold-gradient', name: 'Bold Gradient' },
+      { id: 'split-screen', name: 'Split Screen' }
+    ];
+  }
+
+  const templates = serverTemplates.filter(t => !hiddenTemplates.includes(t.id));
 
   let html = '';
 
@@ -494,10 +505,10 @@ function loadTemplates() {
         </div>
       </div>
     `).join('');
-    html += `<div class="templates-section-title" style="grid-column:1/-1; margin-top:8px;">Default Templates</div>`;
+    html += `<div class="templates-section-title" style="grid-column:1/-1; margin-top:8px;">All Templates</div>`;
   }
 
-  // Default templates
+  // Server templates
   if (templates.length === 0) {
     html += `
       <div class="empty-state" style="grid-column: 1/-1;">
@@ -515,6 +526,7 @@ function loadTemplates() {
         <div class="template-preview" onclick="selectTemplate('${t.id}')">
           <img src="${API_URL}/api/template-preview/${t.id}"
                alt="${t.name}"
+               loading="lazy"
                onerror="this.style.display='none'">
         </div>
         <div class="template-info" onclick="selectTemplate('${t.id}')">${t.name}</div>
@@ -534,7 +546,7 @@ function deleteCustomTemplate(id) {
   showToast('Template deleted');
 }
 
-// Preview a saved custom template (opens modal with download option)
+// Preview a saved custom template
 function previewCustomTemplate(id) {
   const customTemplates = JSON.parse(localStorage.getItem('customTemplates') || '[]');
   const t = customTemplates.find(t => t.id === id);
@@ -564,7 +576,16 @@ function resetTemplates() {
 
 function selectTemplate(id) {
   state.template = id;
-  document.getElementById('templateSelect').value = id;
+  const select = document.getElementById('templateSelect');
+  if (select) {
+    // Add option if not present
+    const exists = Array.from(select.options).some(o => o.value === id);
+    if (!exists) {
+      const option = new Option(id.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()), id);
+      select.add(option);
+    }
+    select.value = id;
+  }
   showToast(`Template "${id}" selected`);
 
   // Switch to generate page
@@ -589,17 +610,9 @@ function showToast(message, type = '') {
 // AI CHATBOT DESIGN ASSISTANT
 // ============================================
 
-let aiChatHistory = [];     // conversation history
-let aiCurrentDesign = null; // current applied design
-let aiCurrentImage = null;  // current generated image base64
-
-// Enable send button when a job is selected
-const originalUpdateSelectedInfo = updateSelectedInfo;
-updateSelectedInfo = function() {
-  originalUpdateSelectedInfo();
-  const sendBtn = document.getElementById('aiSendBtn');
-  if (sendBtn) sendBtn.disabled = state.selectedJobs.size === 0;
-};
+let aiChatHistory = [];
+let aiCurrentDesign = null;
+let aiCurrentImage = null;
 
 function handleAIChatKey(event) {
   if (event.key === 'Enter' && !event.shiftKey) {
@@ -622,10 +635,8 @@ async function sendAIMessage() {
   const job = selectedJobData[0];
   input.value = '';
 
-  // Add user message to chat
   addChatBubble(message, 'user');
 
-  // Disable send while loading
   document.getElementById('aiSendBtn').disabled = true;
   addChatBubble('...', 'ai', 'ai-typing');
 
@@ -642,7 +653,6 @@ async function sendAIMessage() {
       })
     });
 
-    // Remove typing indicator
     const typing = document.querySelector('.ai-typing');
     if (typing) typing.remove();
 
@@ -653,14 +663,11 @@ async function sendAIMessage() {
 
     const data = await response.json();
 
-    // Update chat history
     aiChatHistory.push({ role: 'user', content: message });
     aiChatHistory.push({ role: 'assistant', content: data.reply });
 
-    // Show AI reply in chat
     addChatBubble(data.reply, 'ai');
 
-    // Update preview image
     if (data.image) {
       aiCurrentDesign = data.appliedColors;
       aiCurrentImage = 'data:image/png;base64,' + data.image;
@@ -742,6 +749,149 @@ function saveAIToTemplates() {
   showToast('Added to Templates!', 'success');
 }
 
+// Regenerate current AI design (re-sends last message)
+function regenerateAI() {
+  if (aiChatHistory.length < 2) return;
+  const lastUserMsg = [...aiChatHistory].reverse().find(m => m.role === 'user');
+  if (!lastUserMsg) return;
+
+  // Remove last exchange
+  aiChatHistory = aiChatHistory.slice(0, -2);
+
+  const input = document.getElementById('aiChatInput');
+  input.value = lastUserMsg.content;
+  sendAIMessage();
+}
+
+// Use the current AI template as base template for generation
+function useAITemplate() {
+  if (!aiCurrentImage) return;
+
+  // Save to local templates
+  saveAIToTemplates();
+  showToast('AI design saved to templates', 'success');
+}
+
+// ============================================
+// AI TEMPLATE GENERATOR
+// ============================================
+
+let aiTemplatePreviewImage = null;
+
+function fillExample(text) {
+  document.getElementById('aiTemplatePrompt').value = text;
+}
+
+async function generateAITemplate() {
+  const prompt = document.getElementById('aiTemplatePrompt').value.trim();
+  const nameInput = document.getElementById('aiTemplateName').value.trim();
+
+  if (!prompt) {
+    showToast('Please describe your template', 'error');
+    return;
+  }
+
+  const templateName = nameInput || ('ai-' + Date.now());
+  const btn = document.getElementById('aiTemplateGenBtn');
+  btn.disabled = true;
+  btn.textContent = 'Generating with AI...';
+
+  const previewWrap = document.getElementById('aiTemplatePreviewWrap');
+  previewWrap.innerHTML = `<div class="loading" style="padding:80px 24px;"><div class="spinner"></div><p>AI is creating your template...</p></div>`;
+
+  try {
+    const response = await fetch(`${API_URL}/api/ai-template`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt, templateName })
+    });
+
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err.message || err.error || 'Generation failed');
+    }
+
+    const data = await response.json();
+    showToast(`Template "${data.templateId}" created!`, 'success');
+
+    // Now preview it
+    const previewResponse = await fetch(`${API_URL}/api/template-preview/${data.templateId}`);
+    if (previewResponse.ok) {
+      const blob = await previewResponse.blob();
+      const reader = new FileReader();
+      reader.onload = () => {
+        aiTemplatePreviewImage = reader.result;
+        previewWrap.innerHTML = `<img src="${aiTemplatePreviewImage}" alt="Generated Template" style="width:100%;border-radius:8px;">`;
+        document.getElementById('aiTemplatePreviewActions').style.display = 'flex';
+      };
+      reader.readAsDataURL(blob);
+    } else {
+      previewWrap.innerHTML = `<div style="padding:40px;text-align:center;color:#666;">Template saved as <strong>${data.templateId}</strong>.<br>View it in the Templates gallery.</div>`;
+    }
+
+    // Save to history
+    saveAITemplateHistory(data.templateId, prompt);
+
+    // Refresh template gallery history
+    loadAITemplateHistory();
+
+    // Clear input
+    document.getElementById('aiTemplateName').value = '';
+
+  } catch (error) {
+    console.error('AI template error:', error);
+    previewWrap.innerHTML = `<div style="padding:40px;text-align:center;color:#ef4444;">Error: ${error.message}</div>`;
+    showToast('Failed: ' + error.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Generate Template with AI';
+  }
+}
+
+function downloadAITemplatePreview() {
+  if (!aiTemplatePreviewImage) return;
+  const link = document.createElement('a');
+  link.href = aiTemplatePreviewImage;
+  link.download = 'sagan-ai-template.png';
+  link.click();
+  showToast('Downloaded!', 'success');
+}
+
+function saveAITemplateHistory(templateId, prompt) {
+  const history = JSON.parse(localStorage.getItem('aiTemplateHistory') || '[]');
+  history.unshift({
+    templateId,
+    prompt: prompt.substring(0, 80) + (prompt.length > 80 ? '...' : ''),
+    createdAt: new Date().toLocaleDateString('en-US')
+  });
+  // Keep only last 10
+  localStorage.setItem('aiTemplateHistory', JSON.stringify(history.slice(0, 10)));
+}
+
+function loadAITemplateHistory() {
+  const history = JSON.parse(localStorage.getItem('aiTemplateHistory') || '[]');
+  const container = document.getElementById('aiTemplateHistory');
+  if (!container) return;
+
+  if (history.length === 0) {
+    container.innerHTML = '<div style="padding:24px;color:#999;font-size:14px;text-align:center;">No templates generated yet</div>';
+    return;
+  }
+
+  container.innerHTML = history.map(h => `
+    <div class="ai-history-item" onclick="useHistoryTemplate('${h.templateId}')">
+      <div class="ai-history-name">${h.templateId}</div>
+      <div class="ai-history-prompt">${h.prompt}</div>
+      <div class="ai-history-date">${h.createdAt}</div>
+    </div>
+  `).join('');
+}
+
+function useHistoryTemplate(templateId) {
+  selectTemplate(templateId);
+  showToast(`Template "${templateId}" selected for generation`);
+}
+
 // Post to LinkedIn via Make webhook
 async function postToLinkedIn() {
   const selectedJobData = state.jobs.filter(job => state.selectedJobs.has(job.id));
@@ -752,7 +902,6 @@ async function postToLinkedIn() {
   linkedinBtn.textContent = 'Sending to Make...';
 
   try {
-    // Send job data + settings to Make webhook
     const response = await fetch(`${API_URL}/api/webhook/linkedin`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -803,3 +952,7 @@ window.handleAIChatKey = handleAIChatKey;
 window.resetAIChat = resetAIChat;
 window.downloadAIImage = downloadAIImage;
 window.saveAIToTemplates = saveAIToTemplates;
+window.generateAITemplate = generateAITemplate;
+window.downloadAITemplatePreview = downloadAITemplatePreview;
+window.fillExample = fillExample;
+window.useHistoryTemplate = useHistoryTemplate;

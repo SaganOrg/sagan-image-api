@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    @font-face {
+      font-family: 'PP Mori';
+      src: url(data:font/otf;base64,{{fontPPMoriSemiBold}}) format('opentype');
+      font-weight: 600;
+    }
+    @font-face {
+      font-family: 'PP Mori';
+      src: url(data:font/otf;base64,{{fontPPMoriRegular}}) format('opentype');
+      font-weight: 400;
+    }
+    @font-face {
+      font-family: 'PP Neue Montreal';
+      src: url(data:font/otf;base64,{{fontPPNeueMontreal}}) format('opentype');
+      font-weight: 500;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      width: 1080px;
+      height: 1080px;
+      font-family: 'PP Neue Montreal', sans-serif;
+      background: white;
+      overflow: hidden;
+    }
+
+    .poster {
+      width: 1080px;
+      height: 1080px;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    /* Left color stripe */
+    .stripe {
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 10px;
+      background: linear-gradient(180deg, {{dot1Color}}, {{dot2Color}}, {{dot3Color}}, {{dot4Color}}, {{dot5Color}});
+    }
+
+    /* Header */
+    .header {
+      padding: 44px 64px 32px 80px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      border-bottom: 1px solid #f0f0f0;
+    }
+
+    .badge-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: {{primary}};
+      color: white;
+      font-family: 'PP Mori', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      padding: 8px 20px;
+      border-radius: 50px;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      width: fit-content;
+    }
+
+    .badge-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: white;
+    }
+
+    .logo {
+      height: 44px;
+      width: auto;
+    }
+
+    /* Main content */
+    .content {
+      flex: 1;
+      padding: 36px 64px 36px 80px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .job-title {
+      font-family: 'PP Mori', sans-serif;
+      font-size: 52px;
+      font-weight: 600;
+      color: {{secondary}};
+      line-height: 1.1;
+      margin-bottom: 8px;
+    }
+
+    .job-code {
+      font-size: 18px;
+      color: #999;
+      margin-bottom: 28px;
+    }
+
+    /* Key info row */
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    .info-box {
+      background: #f8f9fa;
+      border-radius: 12px;
+      padding: 16px 20px;
+    }
+
+    .info-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: #999;
+      margin-bottom: 6px;
+    }
+
+    .info-value {
+      font-family: 'PP Mori', sans-serif;
+      font-size: 22px;
+      font-weight: 600;
+      color: {{secondary}};
+    }
+
+    .info-value.highlight {
+      color: {{primary}};
+    }
+
+    /* Two column layout */
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      flex: 1;
+    }
+
+    .section-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: {{secondary}};
+      opacity: 0.5;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: currentColor;
+      opacity: 0.3;
+    }
+
+    .list {
+      list-style: none;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .list li {
+      font-size: 15px;
+      color: #333;
+      padding-left: 20px;
+      position: relative;
+      line-height: 1.5;
+    }
+
+    .list li::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 8px;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: {{primary}};
+    }
+
+    /* Footer */
+    .footer {
+      background: {{secondary}};
+      padding: 28px 64px 28px 80px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .apply-btn {
+      background: {{accent}};
+      color: {{secondary}};
+      font-family: 'PP Mori', sans-serif;
+      font-size: 18px;
+      font-weight: 600;
+      padding: 16px 48px;
+      border-radius: 50px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .footer-right {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 10px;
+    }
+
+    .footer-url {
+      font-size: 14px;
+      color: rgba(255,255,255,0.6);
+    }
+
+    .dots {
+      display: flex;
+      gap: 8px;
+    }
+
+    .dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+  </style>
+</head>
+<body>
+  <div class="poster">
+    <div class="stripe"></div>
+
+    <div class="header">
+      <div class="badge-wrap">
+        <div class="badge">
+          <div class="badge-dot"></div>
+          Now Hiring
+        </div>
+      </div>
+      <img src="data:image/png;base64,{{logoBase64}}" class="logo" alt="Sagan">
+    </div>
+
+    <div class="content">
+      <h1 class="job-title">{{jobTitle}}</h1>
+      <div class="job-code">{{jobCode}}</div>
+
+      <div class="info-grid">
+        <div class="info-box">
+          <div class="info-label">Salary</div>
+          <div class="info-value highlight">{{salary}}</div>
+        </div>
+        <div class="info-box">
+          <div class="info-label">Location</div>
+          <div class="info-value">{{location}}</div>
+        </div>
+        <div class="info-box">
+          <div class="info-label">Schedule</div>
+          <div class="info-value">{{schedule}}</div>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <div>
+          <div class="section-label">Responsibilities</div>
+          <ul class="list">{{responsibilities}}</ul>
+        </div>
+        <div>
+          <div class="section-label">Qualifications</div>
+          <ul class="list">{{qualifications}}</ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <div class="apply-btn">Apply Now</div>
+      <div class="footer-right">
+        <div class="footer-url">www.saganrecruitment.com/jobs/</div>
+        <div class="dots">
+          <div class="dot" style="background:{{dot1Color}}"></div>
+          <div class="dot" style="background:{{dot2Color}}"></div>
+          <div class="dot" style="background:{{dot3Color}}"></div>
+          <div class="dot" style="background:{{dot4Color}}"></div>
+          <div class="dot" style="background:{{dot5Color}}"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

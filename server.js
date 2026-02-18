@@ -18,7 +18,13 @@ app.use(express.static(path.join(__dirname, 'public'), {
 }));
 
 // Available templates
-const TEMPLATES = ['catalog-1', 'catalog-2', 'catalog-3', 'catalog-multi', 'diagonal', 'spotlight', 'waves', 'modern-clean', 'split-screen', 'search-style', 'multi-job'];
+const TEMPLATES = [
+  'catalog-1', 'catalog-2', 'catalog-3', 'diagonal', 'spotlight', 'waves',
+  'modern-clean', 'split-screen', 'bold-gradient', 'bold-split', 'minimal-card',
+  'minimal-zen', 'single-job', 'single-job-minimal', 'sagan-branded', 'magazine',
+  'geometric', 'glassmorphism', 'neon-card', 'brutalist', 'creative'
+];
+const MULTI_JOB_TEMPLATES = ['catalog-multi', 'search-style', 'multi-job'];
 
 // Stock person photos (professional people with laptops)
 const PERSON_PHOTOS = [
@@ -345,7 +351,21 @@ app.post('/generate-carousel', async (req, res) => {
       coverHtml = coverHtml.replace(/\{\{personPhotoUrl\}\}/g, randomChoice(PERSON_PHOTOS));
       coverHtml = coverHtml.replace(/\{\{responsibilitiesList\}\}/g, coverRespHTML);
       coverHtml = coverHtml.replace(/\{\{qualificationsList\}\}/g, coverQualHTML);
-      coverHtml = coverHtml.replace(/\{\{jobItems\}\}/g, '');
+      // Generate job pills for carousel-cover template
+      const dotColorList = selectedDotStyle.length >= 5 ? selectedDotStyle : ['#f5b801','#73e491','#25a2ff','#ff7455','#9e988f'];
+      const jobPillsHTML = jobs.map((job, i) => `
+        <div class="job-pill">
+          <div class="job-pill-left">
+            <div class="pill-dot" style="background:${dotColorList[i % dotColorList.length]}"></div>
+            <div class="job-pill-title">${job.title || 'Job Title'}</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:16px;">
+            <div class="job-pill-salary">${job.salary || 'TBD'}</div>
+            <div class="pill-arrow"><svg viewBox="0 0 24 24"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/></svg></div>
+          </div>
+        </div>
+      `).join('');
+      coverHtml = coverHtml.replace(/\{\{jobItems\}\}/g, jobPillsHTML);
     } else {
       // Default cover (hardcoded WE ARE HIRING layout)
       coverHtml = generateCarouselCoverHTML(jobs, selectedDotStyle, selectedLogo);
@@ -1064,6 +1084,166 @@ function generateCarouselDetailHTML(job, dotColors, logo) {
 </html>`;
 }
 
+// List all available templates
+app.get('/api/templates', (req, res) => {
+  try {
+    const templatesPath = path.join(__dirname, 'templates');
+    const files = fs.readdirSync(templatesPath)
+      .filter(f => f.endsWith('.html'))
+      .map(f => f.replace('.html', ''))
+      .sort();
+
+    // Friendly display names
+    const nameMap = {
+      'bold-gradient': 'Bold Gradient',
+      'bold-split': 'Bold Split',
+      'brutalist': 'Brutalist',
+      'catalog-1': 'Catalog 1',
+      'catalog-2': 'Catalog 2',
+      'catalog-3': 'Catalog 3',
+      'catalog-multi': 'Catalog Multi',
+      'carousel-cover': 'Carousel Cover',
+      'carousel-detail': 'Carousel Detail',
+      'creative': 'Creative',
+      'diagonal': 'Diagonal',
+      'geometric': 'Geometric',
+      'glassmorphism': 'Glassmorphism',
+      'magazine': 'Magazine',
+      'minimal-card': 'Minimal Card',
+      'minimal-zen': 'Minimal Zen',
+      'modern-clean': 'Modern Clean',
+      'multi-job': 'Multi Job',
+      'neon-card': 'Neon Card',
+      'sagan-branded': 'Sagan Branded',
+      'search-style': 'Search Style',
+      'single-job-minimal': 'Single Job Minimal',
+      'single-job': 'Single Job',
+      'split-screen': 'Split Screen',
+      'spotlight': 'Spotlight',
+      'waves': 'Waves'
+    };
+
+    const templates = files.map(id => ({
+      id,
+      name: nameMap[id] || id.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+    }));
+
+    res.json({ templates });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// AI Template generation using Claude API
+app.post('/api/ai-template', async (req, res) => {
+  try {
+    const { prompt, templateName = 'ai-custom' } = req.body;
+
+    if (!prompt) {
+      return res.status(400).json({ error: 'Prompt required' });
+    }
+
+    const CLAUDE_API_KEY = process.env.CLAUDE_API_KEY;
+    if (!CLAUDE_API_KEY) {
+      return res.status(400).json({
+        error: 'Claude API not configured',
+        message: 'Add CLAUDE_API_KEY to Railway environment variables'
+      });
+    }
+
+    const systemPrompt = `You are an expert HTML/CSS designer specializing in LinkedIn job posting images.
+Generate a complete, standalone HTML template for a 1080x1080px job posting image.
+
+STRICT REQUIREMENTS:
+1. Use EXACTLY these placeholder variables (they will be replaced at runtime):
+   - {{fontPPMoriSemiBold}} - base64 font data (PP Mori SemiBold)
+   - {{fontPPMoriRegular}} - base64 font data (PP Mori Regular)
+   - {{fontPPNeueMontreal}} - base64 font data (PP Neue Montreal)
+   - {{primary}} - primary brand color (e.g. #25a2ff)
+   - {{secondary}} - secondary color (e.g. #093a3e)
+   - {{background}} - background color
+   - {{accent}} - accent color
+   - {{logoBase64}} - company logo (use as: <img src="data:image/png;base64,{{logoBase64}}" ...>)
+   - {{jobTitle}} - the job title text
+   - {{salary}} - salary range text
+   - {{location}} - location text
+   - {{schedule}} - work schedule text
+   - {{jobCode}} - job reference code
+   - {{responsibilities}} - HTML <li> items for responsibilities list
+   - {{qualifications}} - HTML <li> items for qualifications list
+   - {{dot1Color}} through {{dot5Color}} - decorative dot colors
+
+2. Font setup (REQUIRED at top of <style>):
+@font-face {
+  font-family: 'PP Mori';
+  src: url(data:font/otf;base64,{{fontPPMoriSemiBold}}) format('opentype');
+  font-weight: 600;
+}
+@font-face {
+  font-family: 'PP Neue Montreal';
+  src: url(data:font/otf;base64,{{fontPPNeueMontreal}}) format('opentype');
+  font-weight: 500;
+}
+
+3. Body must be exactly 1080x1080px with overflow hidden
+4. NO external image URLs (except for the logo placeholder above)
+5. All CSS must be inline in <style> tag
+6. Generate unique, creative design matching the user's description
+7. Return ONLY the HTML code, no explanation`;
+
+    const claudeResponse = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': CLAUDE_API_KEY,
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify({
+        model: 'claude-opus-4-6',
+        max_tokens: 4096,
+        system: systemPrompt,
+        messages: [
+          {
+            role: 'user',
+            content: `Design a LinkedIn job posting image template with this style: ${prompt}\n\nRemember: 1080x1080px, use all the required placeholders, professional job posting design.`
+          }
+        ]
+      })
+    });
+
+    if (!claudeResponse.ok) {
+      const err = await claudeResponse.json();
+      throw new Error('Claude API error: ' + (err.error?.message || JSON.stringify(err)));
+    }
+
+    const claudeData = await claudeResponse.json();
+    let generatedHtml = claudeData.content[0].text;
+
+    // Extract HTML if wrapped in code block
+    const htmlMatch = generatedHtml.match(/```html\n?([\s\S]*?)\n?```/) || generatedHtml.match(/```\n?([\s\S]*?)\n?```/);
+    if (htmlMatch) {
+      generatedHtml = htmlMatch[1];
+    }
+
+    // Save the generated template to disk
+    const safeTemplateName = templateName.replace(/[^a-z0-9-]/gi, '-').toLowerCase() || 'ai-custom';
+    const savePath = path.join(__dirname, 'templates', `${safeTemplateName}.html`);
+    fs.writeFileSync(savePath, generatedHtml, 'utf8');
+    console.log(`AI template saved: ${safeTemplateName}.html`);
+
+    res.json({
+      success: true,
+      templateId: safeTemplateName,
+      html: generatedHtml,
+      message: `Template "${safeTemplateName}" generated and saved`
+    });
+
+  } catch (error) {
+    console.error('AI template error:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Main endpoint
 app.post('/generate', async (req, res) => {
   let browser = null;
@@ -1096,11 +1276,10 @@ app.post('/generate', async (req, res) => {
     // Select template
     let selectedTemplate = template;
     if (template === 'auto') {
-      // If jobs array is provided, use multi-job template
       if (jobs && jobs.length > 0) {
-        selectedTemplate = 'multi-job';
+        selectedTemplate = randomChoice(MULTI_JOB_TEMPLATES);
       } else {
-        selectedTemplate = randomChoice(TEMPLATES.filter(t => t !== 'multi-job'));
+        selectedTemplate = randomChoice(TEMPLATES);
       }
     }
 
@@ -1160,7 +1339,7 @@ app.post('/generate', async (req, res) => {
     }
 
     // Handle different templates
-    if (selectedTemplate === 'multi-job' || selectedTemplate === 'search-style' || selectedTemplate === 'catalog-multi') {
+    if (MULTI_JOB_TEMPLATES.includes(selectedTemplate)) {
       // Generate job items HTML
       const jobsData = jobs.length > 0 ? jobs : [
         { title: jobTitle, salary: salary }

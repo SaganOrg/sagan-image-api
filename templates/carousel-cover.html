@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    @font-face {
+      font-family: 'PP Mori';
+      src: url(data:font/otf;base64,{{fontPPMoriSemiBold}}) format('opentype');
+      font-weight: 600;
+    }
+    @font-face {
+      font-family: 'PP Mori';
+      src: url(data:font/otf;base64,{{fontPPMoriRegular}}) format('opentype');
+      font-weight: 400;
+    }
+    @font-face {
+      font-family: 'PP Neue Montreal';
+      src: url(data:font/otf;base64,{{fontPPNeueMontreal}}) format('opentype');
+      font-weight: 500;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      width: 1080px;
+      height: 1080px;
+      font-family: 'PP Neue Montreal', sans-serif;
+      background: {{background}};
+      overflow: hidden;
+    }
+
+    .poster {
+      width: 1080px;
+      height: 1080px;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Top accent bar */
+    .top-bar {
+      height: 8px;
+      background: linear-gradient(90deg, {{dot1Color}}, {{dot2Color}}, {{dot3Color}}, {{dot4Color}}, {{dot5Color}});
+    }
+
+    /* Header */
+    .header {
+      background: {{secondary}};
+      padding: 40px 64px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .header-text .we-are {
+      font-family: 'PP Mori', sans-serif;
+      font-size: 22px;
+      font-weight: 400;
+      color: rgba(255,255,255,0.7);
+      text-transform: uppercase;
+      letter-spacing: 3px;
+      display: block;
+    }
+
+    .header-text .hiring {
+      font-family: 'PP Mori', sans-serif;
+      font-size: 64px;
+      font-weight: 600;
+      color: #ffffff;
+      text-transform: uppercase;
+      line-height: 1;
+      display: block;
+    }
+
+    .header-text .hiring span {
+      color: {{primary}};
+    }
+
+    .logo {
+      height: 52px;
+      width: auto;
+    }
+
+    /* Content */
+    .content {
+      flex: 1;
+      padding: 48px 64px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 20px;
+      background: {{background}};
+    }
+
+    .subtitle {
+      font-size: 18px;
+      color: {{secondary}};
+      opacity: 0.6;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 8px;
+    }
+
+    .job-pill {
+      background: white;
+      border: 2px solid rgba(9, 58, 62, 0.12);
+      border-radius: 16px;
+      padding: 22px 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: all 0.2s;
+    }
+
+    .job-pill-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .pill-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .job-pill-title {
+      font-family: 'PP Mori', sans-serif;
+      font-size: 22px;
+      font-weight: 600;
+      color: {{secondary}};
+    }
+
+    .job-pill-salary {
+      font-size: 16px;
+      color: {{primary}};
+      font-weight: 600;
+    }
+
+    .pill-arrow {
+      width: 32px;
+      height: 32px;
+      background: {{primary}};
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .pill-arrow svg {
+      width: 16px;
+      height: 16px;
+      fill: white;
+    }
+
+    /* Footer */
+    .footer {
+      padding: 28px 64px;
+      background: white;
+      border-top: 1px solid rgba(9, 58, 62, 0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .footer-url {
+      font-size: 15px;
+      color: {{secondary}};
+      opacity: 0.5;
+    }
+
+    .dots {
+      display: flex;
+      gap: 10px;
+    }
+
+    .dot {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+    }
+
+    .swipe-hint {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      color: {{secondary}};
+      opacity: 0.5;
+    }
+  </style>
+</head>
+<body>
+  <div class="poster">
+    <div class="top-bar"></div>
+
+    <div class="header">
+      <div class="header-text">
+        <span class="we-are">We Are</span>
+        <span class="hiring">Hiri<span>ng!</span></span>
+      </div>
+      <img src="data:image/png;base64,{{logoBase64}}" class="logo" alt="Sagan">
+    </div>
+
+    <div class="content">
+      <div class="subtitle">Open Positions → Swipe to explore</div>
+      {{jobItems}}
+    </div>
+
+    <div class="footer">
+      <div class="footer-url">www.saganrecruitment.com/jobs/</div>
+      <div class="dots">
+        <div class="dot" style="background:{{dot1Color}}"></div>
+        <div class="dot" style="background:{{dot2Color}}"></div>
+        <div class="dot" style="background:{{dot3Color}}"></div>
+        <div class="dot" style="background:{{dot4Color}}"></div>
+        <div class="dot" style="background:{{dot5Color}}"></div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
