@@ -1070,7 +1070,7 @@ function fillExample(text) {
 }
 
 // Create a small JPEG thumbnail from a base64 image (for localStorage storage)
-function createThumbnail(base64, maxSize = 300) {
+function createThumbnail(base64, maxSize = 800) {
   return new Promise(resolve => {
     const img = new Image();
     img.onload = () => {
@@ -1079,7 +1079,7 @@ function createThumbnail(base64, maxSize = 300) {
       canvas.width = Math.round(img.width * ratio);
       canvas.height = Math.round(img.height * ratio);
       canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-      resolve(canvas.toDataURL('image/jpeg', 0.65));
+      resolve(canvas.toDataURL('image/jpeg', 0.82));
     };
     img.onerror = () => resolve(null);
     img.src = base64;
@@ -1206,7 +1206,7 @@ async function generateAITemplate() {
         previewWrap.innerHTML = `<img src="${aiTemplatePreviewImage}" alt="Generated Template" style="width:100%;border-radius:8px;">`;
         document.getElementById('aiTemplatePreviewActions').style.display = 'flex';
 
-        const thumb = await createThumbnail(aiTemplatePreviewImage, 300);
+        const thumb = await createThumbnail(aiTemplatePreviewImage, 800);
         saveAITemplateHistory(data.templateId, prompt, aiSelections.outputType, thumb);
         loadAITemplateHistory();
       };
