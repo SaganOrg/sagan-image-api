@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sagan Image Generator</title>
-  <link rel="stylesheet" href="styles.css?v=26">
+  <link rel="stylesheet" href="styles.css?v=27">
 </head>
 <body>
   <div class="app">
@@ -171,6 +171,28 @@
                   <div class="selector-label">Template Name <span style="font-weight:400;text-transform:none;letter-spacing:0;opacity:0.6;">(optional)</span></div>
                   <input type="text" id="aiTemplateName" placeholder="Auto-generated if empty" maxlength="40">
                 </div>
+
+                <!-- MODIFICATION MODE BANNER (shown when modifying an existing template) -->
+                <div id="modifyModeBanner" class="modify-mode-banner" style="display:none;">
+                  <div class="modify-mode-info">
+                    <span class="modify-mode-icon">✏️</span>
+                    <div>
+                      <div class="modify-mode-label">Modification Mode</div>
+                      <div class="modify-mode-name" id="modifyModeTemplateName">—</div>
+                    </div>
+                  </div>
+                  <button class="modify-mode-cancel" onclick="cancelModifyMode()">× Cancel</button>
+                </div>
+
+                <!-- WHAT TO CHANGE (only shown in modification mode) -->
+                <div id="modifyRequestGroup" class="selector-group" style="display:none;">
+                  <div class="selector-label">What to change</div>
+                  <textarea id="modifyRequest" rows="3"
+                    placeholder="E.g.: change the logo to light version, make title font larger, change the background to dark blue..."></textarea>
+                </div>
+
+                <!-- REGULAR FORM OPTIONS (hidden in modification mode) -->
+                <div id="regularFormOptions">
 
                 <!-- 0. OUTPUT TYPE -->
                 <div class="selector-group">
@@ -380,6 +402,8 @@
                   </div>
                 </div>
 
+                </div><!-- end #regularFormOptions -->
+
                 <button class="btn-generate" id="aiTemplateGenBtn" onclick="generateAITemplate()">
                   ✨ Generate with AI
                 </button>
@@ -463,6 +487,6 @@
     <div class="toast" id="toast"></div>
   </div>
 
-  <script src="app.js?v=26"></script>
+  <script src="app.js?v=27"></script>
 </body>
 </html>

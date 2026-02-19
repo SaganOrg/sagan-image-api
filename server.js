@@ -1144,9 +1144,10 @@ app.get('/api/templates', (req, res) => {
 // AI Template generation using Claude API
 app.post('/api/ai-template', async (req, res) => {
   try {
-    const { prompt, templateName = 'ai-custom' } = req.body;
+    const { prompt, templateName = 'ai-custom', baseTemplateId, modificationRequest } = req.body;
+    const isModifyMode = !!(baseTemplateId && modificationRequest);
 
-    if (!prompt) {
+    if (!prompt && !modificationRequest) {
       return res.status(400).json({ error: 'Prompt required' });
     }
 
@@ -1239,6 +1240,33 @@ STRICT REQUIREMENTS:
 9. Generate a unique layout matching the user's style request, but always within Sagan brand
 10. Return ONLY the HTML code, no explanation`;
 
+    // Modify mode: read base template and use a targeted edit prompt
+    let finalSystemPrompt = systemPrompt;
+    let userMessage;
+
+    if (isModifyMode) {
+      const basePath = path.join(__dirname, 'templates', `${baseTemplateId}.html`);
+      if (!fs.existsSync(basePath)) {
+        return res.status(404).json({
+          error: `Original template "${baseTemplateId}" is no longer on the server (it may have been removed after a restart). Generate a fresh template instead.`
+        });
+      }
+      const baseHtml = fs.readFileSync(basePath, 'utf8');
+
+      finalSystemPrompt = `You are an expert HTML/CSS editor for Sagan Recruitment templates.
+You will receive an existing 1080x1080px LinkedIn job posting HTML template and specific modification instructions.
+
+CRITICAL RULES — follow these without exception:
+1. Make ONLY the changes that are explicitly requested. Keep EVERYTHING else identical.
+2. Do NOT change colors, layout, spacing, fonts, or structure unless the modification request explicitly asks for it.
+3. Preserve ALL template placeholder variables exactly as they are: {{fontPPMoriSemiBold}}, {{fontPPMoriRegular}}, {{fontPPNeueMontreal}}, {{logoBase64}}, {{jobTitle}}, {{salary}}, {{location}}, {{schedule}}, {{jobCode}}, {{responsibilities}}, {{qualifications}}, {{dot1Color}} through {{dot5Color}}.
+4. Return ONLY the complete modified HTML file, no explanation, no markdown fences.`;
+
+      userMessage = `Here is the original template HTML:\n\`\`\`html\n${baseHtml}\n\`\`\`\n\nModification request: ${modificationRequest}`;
+    } else {
+      userMessage = `Design a LinkedIn job posting image template with this style: ${prompt}\n\nRemember: 1080x1080px, use all the required placeholders, professional job posting design.`;
+    }
+
     const claudeResponse = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -1249,13 +1277,8 @@ STRICT REQUIREMENTS:
       body: JSON.stringify({
         model: 'claude-opus-4-6',
         max_tokens: 4096,
-        system: systemPrompt,
-        messages: [
-          {
-            role: 'user',
-            content: `Design a LinkedIn job posting image template with this style: ${prompt}\n\nRemember: 1080x1080px, use all the required placeholders, professional job posting design.`
-          }
-        ]
+        system: finalSystemPrompt,
+        messages: [{ role: 'user', content: userMessage }]
       })
     });
 

@@ -679,6 +679,10 @@ function selectTemplate(id) {
 let templatePreviewId = null;
 let templatePreviewTitle = '';
 
+// Modification mode state
+let _modifyTemplateId = null;
+let _modifyTemplateName = null;
+
 // directSrc: base64/url to display directly (skip API fetch)
 // useId: the template ID passed to selectTemplate on "Use This Template" (overrides id)
 function showTemplatePreview(id, name, directSrc, useId) {
@@ -726,8 +730,9 @@ function usePreviewTemplate() {
 }
 
 function modifyWithAI() {
-  // Grab the template name before closing (closeTemplatePreview clears it)
-  const prefillName = templatePreviewTitle;
+  // Capture before closing (closeTemplatePreview clears these)
+  _modifyTemplateId = templatePreviewId;
+  _modifyTemplateName = templatePreviewTitle;
   closeTemplatePreview();
 
   // Navigate to AI Template tab
@@ -737,12 +742,35 @@ function modifyWithAI() {
   document.getElementById('page-ai-template').classList.add('active');
   loadAITemplateHistory();
 
-  // Prefill template name so the user can see which template they're modifying
+  // Activate modification mode UI
+  showModifyMode();
+}
+
+function showModifyMode() {
+  document.getElementById('modifyModeBanner').style.display = 'flex';
+  document.getElementById('modifyRequestGroup').style.display = 'flex';
+  document.getElementById('regularFormOptions').style.display = 'none';
+  document.getElementById('modifyModeTemplateName').textContent = _modifyTemplateName || _modifyTemplateId || '—';
+
+  // Prefill template name with "-v2" suffix
   const nameInput = document.getElementById('aiTemplateName');
-  if (nameInput && prefillName) {
-    nameInput.value = prefillName;
-    nameInput.focus();
+  if (nameInput) {
+    nameInput.value = (_modifyTemplateName || _modifyTemplateId || 'modified').replace(/\s+/g, '-').toLowerCase() + '-v2';
   }
+
+  // Focus the modification request textarea
+  const modReq = document.getElementById('modifyRequest');
+  if (modReq) { modReq.value = ''; modReq.focus(); }
+}
+
+function cancelModifyMode() {
+  _modifyTemplateId = null;
+  _modifyTemplateName = null;
+  document.getElementById('modifyModeBanner').style.display = 'none';
+  document.getElementById('modifyRequestGroup').style.display = 'none';
+  document.getElementById('regularFormOptions').style.display = 'block';
+  const modReq = document.getElementById('modifyRequest');
+  if (modReq) modReq.value = '';
 }
 
 // Toast
@@ -1029,27 +1057,47 @@ function createThumbnail(base64, maxSize = 300) {
 }
 
 async function generateAITemplate() {
-  const prompt = buildAIPrompt();
   const nameInput = document.getElementById('aiTemplateName').value.trim();
+  const isModify = !!_modifyTemplateId;
 
-  if (!prompt) {
+  // In modification mode, require a modification request
+  if (isModify) {
+    const modReq = document.getElementById('modifyRequest').value.trim();
+    if (!modReq) {
+      showToast('Please describe what to change', 'error');
+      document.getElementById('modifyRequest').focus();
+      return;
+    }
+  }
+
+  const prompt = isModify ? '' : buildAIPrompt();
+  if (!isModify && !prompt) {
     showToast('Please describe your template', 'error');
     return;
   }
 
-  const templateName = nameInput || ('ai-' + Date.now());
+  const templateName = nameInput || (isModify ? (_modifyTemplateId + '-v2') : ('ai-' + Date.now()));
   const btn = document.getElementById('aiTemplateGenBtn');
   btn.disabled = true;
-  btn.textContent = 'Generating with AI...';
+  btn.textContent = isModify ? 'Applying changes...' : 'Generating with AI...';
 
   const previewWrap = document.getElementById('aiTemplatePreviewWrap');
-  previewWrap.innerHTML = `<div class="loading" style="padding:80px 24px;"><div class="spinner"></div><p>AI is creating your template...</p></div>`;
+  previewWrap.innerHTML = `<div class="loading" style="padding:80px 24px;"><div class="spinner"></div><p>${isModify ? 'AI is modifying your template...' : 'AI is creating your template...'}</p></div>`;
+
+  const requestBody = isModify
+    ? {
+        prompt: '',
+        templateName,
+        baseTemplateId: _modifyTemplateId,
+        modificationRequest: document.getElementById('modifyRequest').value.trim()
+      }
+    : { prompt, templateName };
 
   try {
     const response = await fetch(`${API_URL}/api/ai-template`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt, templateName })
+      body: JSON.stringify(requestBody)
     });
 
     if (!response.ok) {
@@ -1101,8 +1149,9 @@ async function generateAITemplate() {
       loadAITemplateHistory();
     }
 
-    // Clear input
+    // Clear input + exit modification mode on success
     document.getElementById('aiTemplateName').value = '';
+    if (isModify) cancelModifyMode();
 
   } catch (error) {
     console.error('AI template error:', error);
@@ -1273,5 +1322,6 @@ window.showTemplatePreview = showTemplatePreview;
 window.closeTemplatePreview = closeTemplatePreview;
 window.usePreviewTemplate = usePreviewTemplate;
 window.modifyWithAI = modifyWithAI;
+window.cancelModifyMode = cancelModifyMode;
 window.deleteAIHistoryItem = deleteAIHistoryItem;
 window.previewHistoryTemplate = previewHistoryTemplate;
