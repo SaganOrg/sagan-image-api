@@ -639,7 +639,6 @@ const aiSelections = {
   palette: 'classic',
   logoStyle: 'dark',
   dotStyle: 'default',
-  background: 'cream',
   decoration: 'none',
   outputType: 'single'
 };
@@ -683,12 +682,6 @@ const DOT_COLOR_MAP = {
   'none':    []
 };
 
-const BACKGROUND_PROMPTS = {
-  'cream': 'BACKGROUND (REQUIRED — overrides palette): body background MUST be #ede9e5 (Sagan warm cream). Use dark text.',
-  'white': 'BACKGROUND (REQUIRED — overrides palette): body background MUST be #ffffff (white). Use dark text.',
-  'dark':  'BACKGROUND (REQUIRED — overrides palette): body background MUST be #093a3e (Sagan dark teal). Use white/light text throughout.',
-  'blue':  'BACKGROUND (REQUIRED — overrides palette): body background MUST be #25a2ff (Sagan blue). Use white text and dark teal (#093a3e) accents throughout. Do NOT use a dark or black background.'
-};
 
 const OUTPUT_TYPE_PROMPTS = {
   'single':         '',
@@ -707,16 +700,6 @@ const DECORATION_PROMPTS = {
 function buildAIPrompt() {
   const extraNote = document.getElementById('aiTemplatePrompt').value.trim();
   const decorationPrompt = DECORATION_PROMPTS[aiSelections.decoration];
-
-  let bgPrompt;
-  if (aiSelections.background === 'custom') {
-    const textVal = document.getElementById('customBgText').value.trim();
-    const pickerVal = document.getElementById('customBgPicker').value;
-    const customColor = textVal || pickerVal || '#ffffff';
-    bgPrompt = `BACKGROUND (REQUIRED — overrides palette): body background MUST be ${customColor}. Choose text colors with strong contrast against this background.`;
-  } else {
-    bgPrompt = BACKGROUND_PROMPTS[aiSelections.background];
-  }
 
   // Dot colors — send exact hex values so Claude uses the right colors
   const dotColors = DOT_COLOR_MAP[aiSelections.dotStyle] || DOT_COLOR_MAP.default;
@@ -742,7 +725,6 @@ function buildAIPrompt() {
 
   const parts = [
     palettePrompt,
-    bgPrompt,
     STYLE_PROMPTS[aiSelections.style],
     EMPHASIS_PROMPTS[aiSelections.emphasis],
     dotPrompt,
@@ -769,14 +751,6 @@ function buildAIPrompt() {
 
   if (extraNote) parts.push(`Additional request: ${extraNote}`);
   return parts.join(' ');
-}
-
-function syncCustomBg(value, source) {
-  if (source === 'picker') {
-    document.getElementById('customBgText').value = value;
-  } else if (/^#[0-9a-fA-F]{6}$/.test(value)) {
-    document.getElementById('customBgPicker').value = value;
-  }
 }
 
 function syncHeadlineColor(value, source) {
@@ -810,12 +784,6 @@ document.addEventListener('DOMContentLoaded', () => {
       document.querySelectorAll(`.sel-btn[data-group="${group}"]`).forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       aiSelections[group] = btn.dataset.value;
-
-      // Show/hide custom background input
-      if (group === 'background') {
-        const customRow = document.getElementById('customBgRow');
-        if (customRow) customRow.style.display = btn.dataset.value === 'custom' ? 'flex' : 'none';
-      }
 
       // Show/hide headline text section for Carousel Cover
       if (group === 'outputType') {
@@ -1064,7 +1032,6 @@ window.postToLinkedIn = postToLinkedIn;
 window.generateAITemplate = generateAITemplate;
 window.downloadAITemplatePreview = downloadAITemplatePreview;
 window.fillExample = fillExample;
-window.syncCustomBg = syncCustomBg;
 window.syncHeadlineColor = syncHeadlineColor;
 window.updateCustomPalette = updateCustomPalette;
 window.saveAITemplateToGallery = saveAITemplateToGallery;
