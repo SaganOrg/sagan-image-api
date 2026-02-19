@@ -682,6 +682,8 @@ let templatePreviewTitle = '';
 // Modification mode state
 let _modifyTemplateId = null;
 let _modifyTemplateName = null;
+let _modifyLogoStyle = 'dark';
+let _modifyDotStyle = 'default';
 
 // directSrc: base64/url to display directly (skip API fetch)
 // useId: the template ID passed to selectTemplate on "Use This Template" (overrides id)
@@ -748,6 +750,8 @@ function modifyWithAI() {
 
 function showModifyMode() {
   document.getElementById('modifyModeBanner').style.display = 'flex';
+  document.getElementById('modifyLogoGroup').style.display = 'flex';
+  document.getElementById('modifyDotGroup').style.display = 'flex';
   document.getElementById('modifyRequestGroup').style.display = 'flex';
   document.getElementById('regularFormOptions').style.display = 'none';
   document.getElementById('modifyModeTemplateName').textContent = _modifyTemplateName || _modifyTemplateId || '—';
@@ -758,7 +762,29 @@ function showModifyMode() {
     nameInput.value = (_modifyTemplateName || _modifyTemplateId || 'modified').replace(/\s+/g, '-').toLowerCase() + '-v2';
   }
 
-  // Focus the modification request textarea
+  // Reset state and active buttons for logo
+  _modifyLogoStyle = 'dark';
+  document.querySelectorAll('#modifyLogoGroup .logo-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.modlogo === 'dark');
+    btn.onclick = () => {
+      document.querySelectorAll('#modifyLogoGroup .logo-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      _modifyLogoStyle = btn.dataset.modlogo;
+    };
+  });
+
+  // Reset state and active buttons for dot
+  _modifyDotStyle = 'default';
+  document.querySelectorAll('#modifyDotGroup .dot-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.moddot === 'default');
+    btn.onclick = () => {
+      document.querySelectorAll('#modifyDotGroup .dot-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      _modifyDotStyle = btn.dataset.moddot;
+    };
+  });
+
+  // Clear and focus modification request
   const modReq = document.getElementById('modifyRequest');
   if (modReq) { modReq.value = ''; modReq.focus(); }
 }
@@ -766,7 +792,11 @@ function showModifyMode() {
 function cancelModifyMode() {
   _modifyTemplateId = null;
   _modifyTemplateName = null;
+  _modifyLogoStyle = 'dark';
+  _modifyDotStyle = 'default';
   document.getElementById('modifyModeBanner').style.display = 'none';
+  document.getElementById('modifyLogoGroup').style.display = 'none';
+  document.getElementById('modifyDotGroup').style.display = 'none';
   document.getElementById('modifyRequestGroup').style.display = 'none';
   document.getElementById('regularFormOptions').style.display = 'block';
   const modReq = document.getElementById('modifyRequest');
@@ -1059,15 +1089,30 @@ function createThumbnail(base64, maxSize = 300) {
 async function generateAITemplate() {
   const nameInput = document.getElementById('aiTemplateName').value.trim();
   const isModify = !!_modifyTemplateId;
+  const modReqText = isModify ? document.getElementById('modifyRequest').value.trim() : '';
 
-  // In modification mode, require a modification request
-  if (isModify) {
-    const modReq = document.getElementById('modifyRequest').value.trim();
-    if (!modReq) {
-      showToast('Please describe what to change', 'error');
-      document.getElementById('modifyRequest').focus();
-      return;
+  // If modification mode with empty textarea → logo/dot-only change, skip AI and just re-preview
+  if (isModify && !modReqText) {
+    const previewWrap = document.getElementById('aiTemplatePreviewWrap');
+    previewWrap.innerHTML = `<div class="loading" style="padding:80px 24px;"><div class="spinner"></div><p>Applying changes...</p></div>`;
+    try {
+      const previewResponse = await fetch(`${API_URL}/api/template-preview/${_modifyTemplateId}?dotStyle=${_modifyDotStyle}&logoStyle=${_modifyLogoStyle}`);
+      if (previewResponse.ok) {
+        const blob = await previewResponse.blob();
+        const reader = new FileReader();
+        reader.onload = () => {
+          aiTemplatePreviewImage = reader.result;
+          previewWrap.innerHTML = `<img src="${aiTemplatePreviewImage}" alt="Preview" style="width:100%;border-radius:8px;">`;
+          document.getElementById('aiTemplatePreviewActions').style.display = 'flex';
+        };
+        reader.readAsDataURL(blob);
+      } else {
+        previewWrap.innerHTML = `<div style="padding:40px;text-align:center;color:#ef4444;">Preview failed — this template may have been removed after a server restart.</div>`;
+      }
+    } catch (err) {
+      previewWrap.innerHTML = `<div style="padding:40px;text-align:center;color:#ef4444;">Preview failed: ${err.message}</div>`;
     }
+    return;
   }
 
   const prompt = isModify ? '' : buildAIPrompt();
@@ -1089,7 +1134,7 @@ async function generateAITemplate() {
         prompt: '',
         templateName,
         baseTemplateId: _modifyTemplateId,
-        modificationRequest: document.getElementById('modifyRequest').value.trim()
+        modificationRequest: modReqText
       }
     : { prompt, templateName };
 
@@ -1102,6 +1147,20 @@ async function generateAITemplate() {
 
     if (!response.ok) {
       const err = await response.json();
+      // If original template was lost after server restart, exit modification mode
+      // and explain what happened so user can generate fresh
+      if (response.status === 404 && isModify) {
+        cancelModifyMode();
+        previewWrap.innerHTML = `<div style="padding:40px;text-align:center;color:#ef4444;">
+          <strong>Template lost after server restart</strong><br><br>
+          The original template is no longer available on the server.<br>
+          Use the form below to generate a fresh template with your desired design.
+        </div>`;
+        showToast('Original template is gone — generate fresh', 'error');
+        btn.disabled = false;
+        btn.textContent = '✨ Generate with AI';
+        return;
+      }
       throw new Error(err.message || err.error || 'Generation failed');
     }
 
@@ -1127,8 +1186,10 @@ async function generateAITemplate() {
       }
     }
 
-    // Now preview it (pass dot/logo style so preview matches selections)
-    const previewResponse = await fetch(`${API_URL}/api/template-preview/${data.templateId}?dotStyle=${aiSelections.dotStyle}&logoStyle=${aiSelections.logoStyle}`);
+    // Preview with selected logo/dot style
+    const dotStyle = isModify ? _modifyDotStyle : aiSelections.dotStyle;
+    const logoStyle = isModify ? _modifyLogoStyle : aiSelections.logoStyle;
+    const previewResponse = await fetch(`${API_URL}/api/template-preview/${data.templateId}?dotStyle=${dotStyle}&logoStyle=${logoStyle}`);
     if (previewResponse.ok) {
       const blob = await previewResponse.blob();
       const reader = new FileReader();
@@ -1137,7 +1198,6 @@ async function generateAITemplate() {
         previewWrap.innerHTML = `<img src="${aiTemplatePreviewImage}" alt="Generated Template" style="width:100%;border-radius:8px;">`;
         document.getElementById('aiTemplatePreviewActions').style.display = 'flex';
 
-        // Create small thumbnail and save to history (survives server restarts)
         const thumb = await createThumbnail(aiTemplatePreviewImage, 300);
         saveAITemplateHistory(data.templateId, prompt, aiSelections.outputType, thumb);
         loadAITemplateHistory();

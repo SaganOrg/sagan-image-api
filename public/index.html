@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sagan Image Generator</title>
-  <link rel="stylesheet" href="styles.css?v=27">
+  <link rel="stylesheet" href="styles.css?v=28">
 </head>
 <body>
   <div class="app">
@@ -184,11 +184,33 @@
                   <button class="modify-mode-cancel" onclick="cancelModifyMode()">× Cancel</button>
                 </div>
 
-                <!-- WHAT TO CHANGE (only shown in modification mode) -->
+                <!-- Logo selector in modification mode -->
+                <div id="modifyLogoGroup" class="selector-group" style="display:none;">
+                  <div class="selector-label">Logo Style</div>
+                  <div class="logo-options">
+                    <button class="logo-btn active" data-modlogo="dark"><img src="/api/logo/dark" alt="Dark" onerror="this.parentElement.innerHTML='Dark'"></button>
+                    <button class="logo-btn dark-bg" data-modlogo="light"><img src="/api/logo/light" alt="Light" onerror="this.parentElement.innerHTML='Light'"></button>
+                    <button class="logo-btn" data-modlogo="blue"><img src="/api/logo/blue" alt="Blue" onerror="this.parentElement.innerHTML='Blue'"></button>
+                  </div>
+                </div>
+
+                <!-- Dot colors in modification mode -->
+                <div id="modifyDotGroup" class="selector-group" style="display:none;">
+                  <div class="selector-label">Dot Colors</div>
+                  <div class="dot-options">
+                    <button class="dot-btn active" data-moddot="default"><span style="background:#f5b801"></span><span style="background:#73e491"></span><span style="background:#25a2ff"></span><span style="background:#ff7455"></span><span style="background:#9e988f"></span></button>
+                    <button class="dot-btn" data-moddot="vibrant"><span style="background:#796aff"></span><span style="background:#25a2ff"></span><span style="background:#73e491"></span><span style="background:#ff7455"></span><span style="background:#f5b801"></span></button>
+                    <button class="dot-btn" data-moddot="warm"><span style="background:#ff7455"></span><span style="background:#f5b801"></span><span style="background:#611f2c"></span><span style="background:#9e988f"></span><span style="background:#cac1b4"></span></button>
+                    <button class="dot-btn" data-moddot="cool"><span style="background:#796aff"></span><span style="background:#25a2ff"></span><span style="background:#093a3e"></span><span style="background:#73e491"></span><span style="background:#9e988f"></span></button>
+                    <button class="dot-btn" data-moddot="none"><span style="background:#ddd"></span><span style="background:#ddd"></span><span style="background:#ddd"></span><span style="background:#ddd"></span><span style="background:#ddd"></span></button>
+                  </div>
+                </div>
+
+                <!-- WHAT TO CHANGE (only shown in modification mode) — optional, for AI design changes -->
                 <div id="modifyRequestGroup" class="selector-group" style="display:none;">
-                  <div class="selector-label">What to change</div>
+                  <div class="selector-label">Design changes <span style="font-weight:400;text-transform:none;letter-spacing:0;opacity:0.6;">(optional — for AI)</span></div>
                   <textarea id="modifyRequest" rows="3"
-                    placeholder="E.g.: change the logo to light version, make title font larger, change the background to dark blue..."></textarea>
+                    placeholder="Leave blank to only apply logo/dot changes above. Or describe design changes: make title larger, change background to dark blue..."></textarea>
                 </div>
 
                 <!-- REGULAR FORM OPTIONS (hidden in modification mode) -->
@@ -487,6 +509,6 @@
     <div class="toast" id="toast"></div>
   </div>
 
-  <script src="app.js?v=27"></script>
+  <script src="app.js?v=28"></script>
 </body>
 </html>
