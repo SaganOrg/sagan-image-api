@@ -735,7 +735,7 @@ function buildAIPrompt() {
     const c2 = document.getElementById('cp2')?.value || '#f5b801';
     const c3 = document.getElementById('cp3')?.value || '#ff7455';
     const c4 = document.getElementById('cp4')?.value || '#093a3e';
-    palettePrompt = `CUSTOM COLOR PALETTE (use ONLY these exact colors — REQUIRED): Color 1 (primary): ${c1}, Color 2 (accent): ${c2}, Color 3 (secondary accent): ${c3}, Color 4 (base/text): ${c4}. Build the entire design around these specific colors. Do not substitute with other colors.`;
+    palettePrompt = `CUSTOM COLOR PALETTE (use ONLY these exact colors — REQUIRED): Background: ${c1}, Primary/headings: ${c2}, Accent/buttons/highlights: ${c3}, Text/body: ${c4}. Build the entire design around these specific colors. Do not substitute with other colors.`;
   } else {
     palettePrompt = `Color palette: ${PALETTE_PROMPTS[aiSelections.palette]}`;
   }
