@@ -903,7 +903,7 @@ select:focus {
 .selector-group {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
 }
 
 .selector-label {
@@ -1242,7 +1242,7 @@ select:focus {
   padding: 24px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 28px;
 }
 
 .ai-template-field {
