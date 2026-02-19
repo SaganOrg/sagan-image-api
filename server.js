@@ -458,6 +458,9 @@ app.get('/api/template-preview/:templateId', async (req, res) => {
 
   try {
     const { templateId } = req.params;
+    const dotStyleParam = req.query.dotStyle || 'default';
+    const logoStyleParam = req.query.logoStyle || 'dark';
+
     const templatePath = path.join(__dirname, 'templates', `${templateId}.html`);
 
     if (!fs.existsSync(templatePath)) {
@@ -471,21 +474,25 @@ app.get('/api/template-preview/:templateId', async (req, res) => {
     html = html.replace(/\{\{secondary\}\}/g, THEME.secondary);
     html = html.replace(/\{\{background\}\}/g, THEME.background);
     html = html.replace(/\{\{accent\}\}/g, THEME.accent);
-    html = html.replace(/\{\{logoBase64\}\}/g, LOGOS.dark || '');
-    html = html.replace(/\{\{logoLightBase64\}\}/g, LOGOS.light || '');
-    html = html.replace(/\{\{logoBlueBase64\}\}/g, LOGOS.blue || '');
+
+    // Use requested logo style
+    const selectedLogo = LOGOS[logoStyleParam] || LOGOS.dark || '';
+    html = html.replace(/\{\{logoBase64\}\}/g, selectedLogo);
+    html = html.replace(/\{\{logoLightBase64\}\}/g, selectedLogo);
+    html = html.replace(/\{\{logoBlueBase64\}\}/g, selectedLogo);
+
     html = html.replace(/\{\{fontPPMoriSemiBold\}\}/g, FONTS['PPMori-SemiBold'] || '');
     html = html.replace(/\{\{fontPPMoriRegular\}\}/g, FONTS['PPMori-Regular'] || '');
     html = html.replace(/\{\{fontPPMoriBook\}\}/g, FONTS['PPMori-Book'] || '');
     html = html.replace(/\{\{fontPPNeueMontreal\}\}/g, FONTS['PPNeueMontreal-Medium'] || '');
 
-    // Dot colors
-    const defaultDots = DOT_STYLES.default;
-    html = html.replace(/\{\{dot1Color\}\}/g, defaultDots[0] || 'transparent');
-    html = html.replace(/\{\{dot2Color\}\}/g, defaultDots[1] || 'transparent');
-    html = html.replace(/\{\{dot3Color\}\}/g, defaultDots[2] || 'transparent');
-    html = html.replace(/\{\{dot4Color\}\}/g, defaultDots[3] || 'transparent');
-    html = html.replace(/\{\{dot5Color\}\}/g, defaultDots[4] || 'transparent');
+    // Use requested dot style
+    const dots = DOT_STYLES[dotStyleParam] || DOT_STYLES.default;
+    html = html.replace(/\{\{dot1Color\}\}/g, dots[0] || 'transparent');
+    html = html.replace(/\{\{dot2Color\}\}/g, dots[1] || 'transparent');
+    html = html.replace(/\{\{dot3Color\}\}/g, dots[2] || 'transparent');
+    html = html.replace(/\{\{dot4Color\}\}/g, dots[3] || 'transparent');
+    html = html.replace(/\{\{dot5Color\}\}/g, dots[4] || 'transparent');
 
     // Sample job data
     html = html.replace(/\{\{jobTitle\}\}/g, 'Marketing Manager');

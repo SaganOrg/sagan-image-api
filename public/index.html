@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sagan Image Generator</title>
-  <link rel="stylesheet" href="styles.css?v=16">
+  <link rel="stylesheet" href="styles.css?v=17">
 </head>
 <body>
   <div class="app">
@@ -211,6 +211,16 @@
               </div>
               <div class="ai-template-form">
 
+                <!-- 0. OUTPUT TYPE -->
+                <div class="selector-group">
+                  <div class="selector-label">Output Type</div>
+                  <div class="selector-btns">
+                    <button class="sel-btn active" data-group="outputType" data-value="single">Single Image</button>
+                    <button class="sel-btn" data-group="outputType" data-value="carousel-cover">Carousel Cover</button>
+                    <button class="sel-btn" data-group="outputType" data-value="carousel-slide">Carousel Slide</button>
+                  </div>
+                </div>
+
                 <!-- 1. COLOR PALETTE -->
                 <div class="selector-group">
                   <div class="selector-label">Color Palette</div>
@@ -360,8 +370,9 @@
             <div class="panel ai-template-preview-panel">
               <div class="panel-header">
                 <h2>Preview</h2>
-                <div id="aiTemplatePreviewActions" style="display:none;">
+                <div id="aiTemplatePreviewActions" style="display:none;gap:8px;">
                   <button class="btn-secondary" style="padding:8px 16px;font-size:14px;" onclick="downloadAITemplatePreview()">Download</button>
+                  <button class="btn-primary" style="padding:8px 16px;font-size:14px;" onclick="saveAITemplateToGallery()">Save to Gallery</button>
                 </div>
               </div>
               <div class="ai-template-preview-wrap" id="aiTemplatePreviewWrap">
@@ -408,6 +419,6 @@
     <div class="toast" id="toast"></div>
   </div>
 
-  <script src="app.js?v=16"></script>
+  <script src="app.js?v=17"></script>
 </body>
 </html>

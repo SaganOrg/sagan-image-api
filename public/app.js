@@ -787,7 +787,8 @@ const aiSelections = {
   logoStyle: 'dark',
   dotStyle: 'default',
   background: 'cream',
-  decoration: 'none'
+  decoration: 'none',
+  outputType: 'single'
 };
 
 // Palette descriptions for prompt building
@@ -828,6 +829,12 @@ const BACKGROUND_PROMPTS = {
   'blue':  'Background color: a deep professional blue (#0d2b4e or #1a3f6f). Use white text throughout.'
 };
 
+const OUTPUT_TYPE_PROMPTS = {
+  'single':         '',
+  'carousel-cover': 'OUTPUT TYPE — CAROUSEL COVER: Design this as the FIRST slide of a carousel series. Include a bold "We Are Hiring" or "Now Hiring" headline. Show {{jobTitle}} as one example job. Use the {{responsibilities}} area to visually list multiple job openings (treat each <li> as a job title pill/row). Make it eye-catching — it must grab attention as the cover slide. Less text detail, more visual impact.',
+  'carousel-slide': 'OUTPUT TYPE — CAROUSEL DETAIL SLIDE: Design this as a mid-carousel slide showing full details for ONE job. Show all job fields: title (large), salary, location, schedule, responsibilities and qualifications in a structured layout. Add a subtle "slide X of Y" or swipe indicator visual cue at the bottom if it fits. Should feel like a continuation of a carousel series.'
+};
+
 const DECORATION_PROMPTS = {
   'none':           '',
   'side-blocks':    'RIGHT SIDE DECORATION (important): Absolutely position 4–5 tall rounded pill shapes (border-radius: 40px) stacked vertically on the right edge of the poster, each about 75px wide and 190px tall. Use these Sagan colors in order: #73e491, #25a2ff, #ff7455, #f5b801, #796aff. Let them overlap the right edge slightly (right: -20px). This is a signature Sagan visual element — make it prominent.',
@@ -850,12 +857,14 @@ function buildAIPrompt() {
     bgPrompt = BACKGROUND_PROMPTS[aiSelections.background];
   }
 
+  const outputTypePrompt = OUTPUT_TYPE_PROMPTS[aiSelections.outputType] || '';
   const parts = [
     `Color palette: ${PALETTE_PROMPTS[aiSelections.palette]}`,
     bgPrompt,
     STYLE_PROMPTS[aiSelections.style],
     EMPHASIS_PROMPTS[aiSelections.emphasis]
   ];
+  if (outputTypePrompt) parts.push(outputTypePrompt);
   if (decorationPrompt) parts.push(decorationPrompt);
   if (extraNote) parts.push(`Additional request: ${extraNote}`);
   return parts.join(' ');
@@ -951,8 +960,8 @@ async function generateAITemplate() {
     const data = await response.json();
     showToast(`Template "${data.templateId}" created!`, 'success');
 
-    // Now preview it
-    const previewResponse = await fetch(`${API_URL}/api/template-preview/${data.templateId}`);
+    // Now preview it (pass dot/logo style so preview matches selections)
+    const previewResponse = await fetch(`${API_URL}/api/template-preview/${data.templateId}?dotStyle=${aiSelections.dotStyle}&logoStyle=${aiSelections.logoStyle}`);
     if (previewResponse.ok) {
       const blob = await previewResponse.blob();
       const reader = new FileReader();
@@ -992,6 +1001,27 @@ function downloadAITemplatePreview() {
   link.download = 'sagan-ai-template.png';
   link.click();
   showToast('Downloaded!', 'success');
+}
+
+function saveAITemplateToGallery() {
+  if (!aiTemplatePreviewImage) return;
+
+  const history = JSON.parse(localStorage.getItem('aiTemplateHistory') || '[]');
+  const latest = history[0];
+  const name = latest ? latest.templateId : ('AI Template ' + new Date().toLocaleDateString('en-US'));
+
+  const customTemplates = JSON.parse(localStorage.getItem('customTemplates') || '[]');
+  customTemplates.unshift({
+    id: 'custom_' + Date.now(),
+    name,
+    imageBase64: aiTemplatePreviewImage,
+    savedAt: new Date().toLocaleDateString('en-US'),
+    template: latest ? latest.templateId : 'ai-template',
+    dotStyle: aiSelections.dotStyle,
+    logoStyle: aiSelections.logoStyle
+  });
+  localStorage.setItem('customTemplates', JSON.stringify(customTemplates));
+  showToast('Saved to Template Gallery!', 'success');
 }
 
 function saveAITemplateHistory(templateId, prompt) {
@@ -1093,4 +1123,5 @@ window.generateAITemplate = generateAITemplate;
 window.downloadAITemplatePreview = downloadAITemplatePreview;
 window.fillExample = fillExample;
 window.syncCustomBg = syncCustomBg;
+window.saveAITemplateToGallery = saveAITemplateToGallery;
 window.useHistoryTemplate = useHistoryTemplate;
