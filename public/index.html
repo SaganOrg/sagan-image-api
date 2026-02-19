@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sagan Image Generator</title>
-  <link rel="stylesheet" href="styles.css?v=22">
+  <link rel="stylesheet" href="styles.css?v=23">
 </head>
 <body>
   <div class="app">
@@ -92,9 +92,6 @@
                 <option value="neon-card">Neon Card</option>
                 <option value="brutalist">Brutalist</option>
                 <option value="creative">Creative</option>
-                <option value="catalog-multi">Catalog Multi (Multi-Job)</option>
-                <option value="multi-job">Multi Job</option>
-                <option value="search-style">Search Style (Multi-Job)</option>
               </select>
             </div>
 
@@ -142,9 +139,15 @@
         <div class="templates-header">
           <div>
             <h2>Template Gallery</h2>
-            <p>Click to select, hover to see delete option</p>
+            <p>Click to preview, hover to hide</p>
           </div>
-          <button class="btn-secondary" onclick="resetTemplates()">Restore Hidden</button>
+          <div style="display:flex;align-items:center;gap:12px;">
+            <div class="template-tabs">
+              <button class="template-tab active" data-tab="single" onclick="switchTemplateTab('single')">Single</button>
+              <button class="template-tab" data-tab="carousel" onclick="switchTemplateTab('carousel')">Carousel</button>
+            </div>
+            <button class="btn-secondary" onclick="resetTemplates()">Restore Hidden</button>
+          </div>
         </div>
         <div class="templates-grid" id="templatesGrid">
           <!-- Templates will be loaded here -->
@@ -162,6 +165,12 @@
                 <h2>AI Template Generator</h2>
               </div>
               <div class="ai-template-form">
+
+                <!-- TEMPLATE NAME (first field) -->
+                <div class="selector-group">
+                  <div class="selector-label">Template Name <span style="font-weight:400;text-transform:none;letter-spacing:0;opacity:0.6;">(optional)</span></div>
+                  <input type="text" id="aiTemplateName" placeholder="Auto-generated if empty" maxlength="40">
+                </div>
 
                 <!-- 0. OUTPUT TYPE -->
                 <div class="selector-group">
@@ -370,10 +379,6 @@
                     <button class="dot-btn" data-style="none"><span style="background:#ddd"></span><span style="background:#ddd"></span><span style="background:#ddd"></span><span style="background:#ddd"></span><span style="background:#ddd"></span></button>
                   </div>
                 </div>
-                <div class="selector-group">
-                  <div class="selector-label">Template Name</div>
-                  <input type="text" id="aiTemplateName" placeholder="Auto-generated if empty" maxlength="40">
-                </div>
 
                 <button class="btn-generate" id="aiTemplateGenBtn" onclick="generateAITemplate()">
                   ✨ Generate with AI
@@ -418,6 +423,25 @@
       </section>
     </main>
 
+    <!-- Template Preview Modal -->
+    <div class="modal" id="templatePreviewModal">
+      <div class="modal-content" style="max-width:min(680px,92vw);">
+        <div class="modal-header">
+          <h3 id="templatePreviewTitle">Template Preview</h3>
+          <button class="modal-close" onclick="closeTemplatePreview()">&times;</button>
+        </div>
+        <div class="template-preview-modal-body">
+          <div id="templatePreviewSpinner" class="loading" style="padding:60px 0;"><div class="spinner"></div><p>Loading preview...</p></div>
+          <img id="templatePreviewImg" alt="Template Preview" style="width:100%;border-radius:12px;display:none;">
+        </div>
+        <div class="modal-footer">
+          <button class="btn-secondary" onclick="closeTemplatePreview()">Close</button>
+          <button class="btn-secondary" onclick="modifyWithAI()">Modify with AI</button>
+          <button class="btn-primary" onclick="usePreviewTemplate()">Use This Template</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Result Modal -->
     <div class="modal" id="resultModal">
       <div class="modal-content">
@@ -439,6 +463,6 @@
     <div class="toast" id="toast"></div>
   </div>
 
-  <script src="app.js?v=22"></script>
+  <script src="app.js?v=23"></script>
 </body>
 </html>

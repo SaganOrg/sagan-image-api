@@ -16,6 +16,16 @@ let state = {
   aiTemplateHtml: null
 };
 
+// Template category sets for dropdown filtering
+const CAROUSEL_TEMPLATE_IDS = new Set([
+  'carousel-cover', 'carousel-detail', 'cover-default'
+]);
+const CAROUSEL_COVER_IDS = new Set(['carousel-cover', 'cover-default']);
+const MULTI_JOB_IDS = new Set(['catalog-multi', 'search-style', 'multi-job']);
+
+// Template gallery tab state
+let templateTab = 'single';
+
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
   initNavigation();
@@ -460,9 +470,18 @@ function downloadAll() {
 // TEMPLATE GALLERY
 // ============================================
 
+function switchTemplateTab(tab) {
+  templateTab = tab;
+  document.querySelectorAll('.template-tab').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.tab === tab);
+  });
+  loadTemplates();
+}
+
 async function loadTemplates() {
   const hiddenTemplates = JSON.parse(localStorage.getItem('hiddenTemplates') || '[]');
   const customTemplates = JSON.parse(localStorage.getItem('customTemplates') || '[]');
+  const aiHistory = JSON.parse(localStorage.getItem('aiTemplateHistory') || '[]');
   const grid = document.getElementById('templatesGrid');
 
   // Load templates from server
@@ -485,15 +504,33 @@ async function loadTemplates() {
     ];
   }
 
-  const templates = serverTemplates.filter(t => !hiddenTemplates.includes(t.id));
+  // Build AI outputType map from history
+  const aiOutputTypeMap = {};
+  aiHistory.forEach(h => {
+    if (h.outputType) aiOutputTypeMap[h.templateId] = h.outputType;
+  });
 
-  // Sync template dropdown with server templates (picks up AI-generated ones)
-  syncTemplateDropdown(serverTemplates);
+  // Sync template dropdowns with server templates (picks up AI-generated ones)
+  syncTemplateDropdown(serverTemplates, aiOutputTypeMap);
+
+  // Filter hidden
+  const visibleTemplates = serverTemplates.filter(t => !hiddenTemplates.includes(t.id));
+
+  // Categorize: carousel = known carousel IDs + multi-job IDs + AI carousel types
+  const isCarousel = (t) => {
+    if (CAROUSEL_TEMPLATE_IDS.has(t.id) || MULTI_JOB_IDS.has(t.id)) return true;
+    const ot = aiOutputTypeMap[t.id];
+    return ot === 'carousel-cover' || ot === 'carousel-slide';
+  };
+
+  const filteredTemplates = visibleTemplates.filter(t =>
+    templateTab === 'single' ? !isCarousel(t) : isCarousel(t)
+  );
 
   let html = '';
 
-  // Saved custom templates section
-  if (customTemplates.length > 0) {
+  // Saved custom templates only on single tab
+  if (templateTab === 'single' && customTemplates.length > 0) {
     html += `<div class="templates-section-title" style="grid-column:1/-1;">Saved Templates</div>`;
     html += customTemplates.map(t => `
       <div class="template-card">
@@ -508,46 +545,72 @@ async function loadTemplates() {
         </div>
       </div>
     `).join('');
-    html += `<div class="templates-section-title" style="grid-column:1/-1; margin-top:8px;">All Templates</div>`;
+    if (filteredTemplates.length > 0) {
+      html += `<div class="templates-section-title" style="grid-column:1/-1; margin-top:8px;">All Templates</div>`;
+    }
   }
 
   // Server templates
-  if (templates.length === 0) {
+  if (filteredTemplates.length === 0) {
     html += `
       <div class="empty-state" style="grid-column: 1/-1;">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6z" />
         </svg>
-        <p>All templates hidden</p>
-        <button class="btn-secondary" onclick="resetTemplates()" style="margin-top:12px;">Restore All</button>
+        <p>No ${templateTab} templates found.</p>
+        ${templateTab === 'carousel' ? '<p style="font-size:13px;margin-top:8px;">Generate carousel templates in the AI Template tab.</p>' : ''}
+        <button class="btn-secondary" onclick="resetTemplates()" style="margin-top:12px;">Restore Hidden</button>
       </div>
     `;
   } else {
-    html += templates.map(t => `
-      <div class="template-card">
-        <button class="template-delete" onclick="event.stopPropagation(); hideTemplate('${t.id}')" title="Hide template">×</button>
-        <div class="template-preview" onclick="selectTemplate('${t.id}')">
-          <img src="${API_URL}/api/template-preview/${t.id}"
-               alt="${t.name}"
-               loading="lazy"
-               onerror="this.style.display='none'">
+    html += filteredTemplates.map(t => {
+      const aiLabel = aiOutputTypeMap[t.id] ? `<div class="template-meta">AI · ${aiOutputTypeMap[t.id]}</div>` : '';
+      const safeName = t.name.replace(/'/g, "\\'");
+      return `
+        <div class="template-card">
+          <button class="template-delete" onclick="event.stopPropagation(); hideTemplate('${t.id}')" title="Hide template">×</button>
+          <div class="template-preview" onclick="showTemplatePreview('${t.id}', '${safeName}')">
+            <img src="${API_URL}/api/template-preview/${t.id}"
+                 alt="${t.name}"
+                 loading="lazy"
+                 onerror="this.style.display='none'">
+          </div>
+          <div class="template-info" onclick="showTemplatePreview('${t.id}', '${safeName}')">
+            ${t.name}
+            ${aiLabel}
+          </div>
         </div>
-        <div class="template-info" onclick="selectTemplate('${t.id}')">${t.name}</div>
-      </div>
-    `).join('');
+      `;
+    }).join('');
   }
 
   grid.innerHTML = html;
 }
 
-// Add any missing templates to the #templateSelect dropdown
-function syncTemplateDropdown(templates) {
-  const select = document.getElementById('templateSelect');
-  if (!select) return;
+// Sync template dropdowns with server templates (filtered by type)
+function syncTemplateDropdown(templates, aiOutputTypeMap = {}) {
+  const singleSelect = document.getElementById('templateSelect');
+  const coverSelect = document.getElementById('carouselCoverSelect');
+  const slideSelect = document.getElementById('carouselDetailSelect');
+
   templates.forEach(t => {
-    const exists = Array.from(select.options).some(o => o.value === t.id);
-    if (!exists) {
-      select.add(new Option(t.name, t.id));
+    const outputType = aiOutputTypeMap[t.id];
+
+    if (outputType === 'carousel-cover' || CAROUSEL_COVER_IDS.has(t.id)) {
+      // Add to cover select only
+      if (coverSelect && !Array.from(coverSelect.options).some(o => o.value === t.id)) {
+        coverSelect.add(new Option(`${t.name} (AI)`, t.id));
+      }
+    } else if (outputType === 'carousel-slide') {
+      // Add to slide select only
+      if (slideSelect && !Array.from(slideSelect.options).some(o => o.value === t.id)) {
+        slideSelect.add(new Option(`${t.name} (AI)`, t.id));
+      }
+    } else if (!CAROUSEL_TEMPLATE_IDS.has(t.id) && !MULTI_JOB_IDS.has(t.id)) {
+      // Single template — add to single select
+      if (singleSelect && !Array.from(singleSelect.options).some(o => o.value === t.id)) {
+        singleSelect.add(new Option(t.name, t.id));
+      }
     }
   });
 }
@@ -608,6 +671,58 @@ function selectTemplate(id) {
   document.querySelector('[data-page="generate"]').classList.add('active');
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById('page-generate').classList.add('active');
+}
+
+// ============================================
+// TEMPLATE PREVIEW MODAL
+// ============================================
+
+let templatePreviewId = null;
+
+function showTemplatePreview(id, name) {
+  templatePreviewId = id;
+  const title = name || id.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  document.getElementById('templatePreviewTitle').textContent = title;
+
+  const img = document.getElementById('templatePreviewImg');
+  const spinner = document.getElementById('templatePreviewSpinner');
+
+  img.style.display = 'none';
+  img.src = '';
+  spinner.style.display = 'block';
+
+  document.getElementById('templatePreviewModal').classList.add('open');
+
+  img.onload = () => {
+    img.style.display = 'block';
+    spinner.style.display = 'none';
+  };
+  img.onerror = () => {
+    spinner.innerHTML = '<p style="color:#999;font-size:14px;padding:40px;">Preview not available</p>';
+  };
+  img.src = `${API_URL}/api/template-preview/${id}`;
+}
+
+function closeTemplatePreview() {
+  document.getElementById('templatePreviewModal').classList.remove('open');
+  templatePreviewId = null;
+}
+
+function usePreviewTemplate() {
+  if (!templatePreviewId) return;
+  const id = templatePreviewId;
+  closeTemplatePreview();
+  selectTemplate(id);
+}
+
+function modifyWithAI() {
+  closeTemplatePreview();
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector('[data-page="ai-template"]').classList.add('active');
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-ai-template').classList.add('active');
+  loadAITemplateHistory();
+  showToast('Adjust settings and generate a new AI template');
 }
 
 // Toast
@@ -923,16 +1038,25 @@ async function generateAITemplate() {
       previewWrap.innerHTML = `<div style="padding:40px;text-align:center;color:#666;">Template saved as <strong>${data.templateId}</strong>.<br>View it in the Templates gallery.</div>`;
     }
 
-    // Save to history
-    saveAITemplateHistory(data.templateId, prompt);
+    // Save to history with outputType
+    saveAITemplateHistory(data.templateId, prompt, aiSelections.outputType);
 
-    // Add to template dropdown immediately (so it's usable in Generate Images tab)
-    const select = document.getElementById('templateSelect');
-    if (select) {
-      const exists = Array.from(select.options).some(o => o.value === data.templateId);
-      if (!exists) {
-        const label = templateName.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-        select.add(new Option(`${label} (AI)`, data.templateId));
+    // Add to correct dropdown based on output type
+    const label = templateName.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+    if (aiSelections.outputType === 'carousel-cover') {
+      const coverSel = document.getElementById('carouselCoverSelect');
+      if (coverSel && !Array.from(coverSel.options).some(o => o.value === data.templateId)) {
+        coverSel.add(new Option(`${label} (AI)`, data.templateId));
+      }
+    } else if (aiSelections.outputType === 'carousel-slide') {
+      const slideSel = document.getElementById('carouselDetailSelect');
+      if (slideSel && !Array.from(slideSel.options).some(o => o.value === data.templateId)) {
+        slideSel.add(new Option(`${label} (AI)`, data.templateId));
+      }
+    } else {
+      const singleSel = document.getElementById('templateSelect');
+      if (singleSel && !Array.from(singleSel.options).some(o => o.value === data.templateId)) {
+        singleSel.add(new Option(`${label} (AI)`, data.templateId));
       }
     }
 
@@ -948,7 +1072,7 @@ async function generateAITemplate() {
     showToast('Failed: ' + error.message, 'error');
   } finally {
     btn.disabled = false;
-    btn.textContent = 'Generate Template with AI';
+    btn.textContent = '✨ Generate with AI';
   }
 }
 
@@ -982,12 +1106,13 @@ function saveAITemplateToGallery() {
   showToast('Saved to Template Gallery!', 'success');
 }
 
-function saveAITemplateHistory(templateId, prompt) {
+function saveAITemplateHistory(templateId, prompt, outputType) {
   const history = JSON.parse(localStorage.getItem('aiTemplateHistory') || '[]');
   history.unshift({
     templateId,
     prompt: prompt.substring(0, 80) + (prompt.length > 80 ? '...' : ''),
-    createdAt: new Date().toLocaleDateString('en-US')
+    createdAt: new Date().toLocaleDateString('en-US'),
+    outputType: outputType || 'single'
   });
   // Keep only last 10
   localStorage.setItem('aiTemplateHistory', JSON.stringify(history.slice(0, 10)));
@@ -1003,18 +1128,35 @@ function loadAITemplateHistory() {
     return;
   }
 
-  container.innerHTML = history.map(h => `
-    <div class="ai-history-item" onclick="useHistoryTemplate('${h.templateId}')">
-      <div class="ai-history-name">${h.templateId}</div>
+  container.innerHTML = history.map((h, i) => `
+    <div class="ai-history-item" onclick="previewHistoryTemplate('${h.templateId}')">
+      <div class="ai-history-top">
+        <div>
+          <div class="ai-history-name">${h.templateId}</div>
+          <div class="ai-history-date">${h.createdAt}${h.outputType ? ' · ' + h.outputType : ''}</div>
+        </div>
+        <button class="ai-history-delete" onclick="event.stopPropagation(); deleteAIHistoryItem(${i})" title="Remove">×</button>
+      </div>
       <div class="ai-history-prompt">${h.prompt}</div>
-      <div class="ai-history-date">${h.createdAt}</div>
     </div>
   `).join('');
 }
 
+function deleteAIHistoryItem(index) {
+  const history = JSON.parse(localStorage.getItem('aiTemplateHistory') || '[]');
+  history.splice(index, 1);
+  localStorage.setItem('aiTemplateHistory', JSON.stringify(history));
+  loadAITemplateHistory();
+  showToast('Removed from history');
+}
+
+function previewHistoryTemplate(templateId) {
+  const name = templateId.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  showTemplatePreview(templateId, name);
+}
+
 function useHistoryTemplate(templateId) {
-  selectTemplate(templateId);
-  showToast(`Template "${templateId}" selected for generation`);
+  previewHistoryTemplate(templateId);
 }
 
 // Post to LinkedIn via Make webhook
@@ -1062,8 +1204,6 @@ window.downloadImage = downloadImage;
 window.downloadAll = downloadAll;
 window.closeModal = closeModal;
 window.loadJobs = loadJobs;
-window.regenerateAI = regenerateAI;
-window.useAITemplate = useAITemplate;
 window.hideTemplate = hideTemplate;
 window.resetTemplates = resetTemplates;
 window.filterJobs = filterJobs;
@@ -1081,3 +1221,10 @@ window.syncSalaryColor = syncSalaryColor;
 window.updateCustomPalette = updateCustomPalette;
 window.saveAITemplateToGallery = saveAITemplateToGallery;
 window.useHistoryTemplate = useHistoryTemplate;
+window.switchTemplateTab = switchTemplateTab;
+window.showTemplatePreview = showTemplatePreview;
+window.closeTemplatePreview = closeTemplatePreview;
+window.usePreviewTemplate = usePreviewTemplate;
+window.modifyWithAI = modifyWithAI;
+window.deleteAIHistoryItem = deleteAIHistoryItem;
+window.previewHistoryTemplate = previewHistoryTemplate;
