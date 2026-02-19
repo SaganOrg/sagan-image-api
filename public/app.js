@@ -636,8 +636,10 @@ const aiSelections = {
   headlineFontSize: 'medium',
   headlineColor: 'dark-teal',
   headlineCustomColor: '',
-  contentColor: 'white',
-  contentCustomColor: '',
+  titleColor: 'white',
+  titleCustomColor: '',
+  salaryColor: 'white',
+  salaryCustomColor: '',
   palette: 'classic',
   logoStyle: 'dark',
   dotStyle: 'default',
@@ -751,28 +753,35 @@ function buildAIPrompt() {
     parts.push(`HEADLINE TEXT (REQUIRED): Display the text "${hlText}" very prominently near the top of the design. Font-size: ${hlSize}. Color: ${hlColor}. Use PP Mori SemiBold (font-weight 600). This is the main attention-grabbing heading of the carousel cover.`);
   }
 
-  // Job Title & Salary color
-  const contentColorMap = {
-    'white':     '#ffffff',
-    'dark-teal': '#093a3e',
-    'yellow':    '#f5b801',
-    'blue':      '#25a2ff',
-    'coral':     '#ff7455',
-    'custom':    aiSelections.contentCustomColor || '#ffffff'
+  // Job Title color
+  const colorMap = {
+    'white': '#ffffff', 'blue': '#25a2ff', 'coral': '#ff7455',
+    'custom-title':  aiSelections.titleCustomColor  || '#ffffff',
+    'custom-salary': aiSelections.salaryCustomColor || '#ffffff'
   };
-  const contentHex = contentColorMap[aiSelections.contentColor] || '#ffffff';
-  parts.push(`JOB TITLE and SALARY VALUE must both use color ${contentHex}. Apply this color to the {{jobTitle}} text and the {{salary}} text elements.`);
+  const titleHex  = aiSelections.titleColor  === 'custom' ? (aiSelections.titleCustomColor  || '#ffffff') : (colorMap[aiSelections.titleColor]  || '#ffffff');
+  const salaryHex = aiSelections.salaryColor === 'custom' ? (aiSelections.salaryCustomColor || '#ffffff') : (colorMap[aiSelections.salaryColor] || '#ffffff');
+  parts.push(`JOB TITLE ({{jobTitle}}) must use color ${titleHex}. SALARY VALUE ({{salary}}) must use color ${salaryHex}.`);
 
   if (extraNote) parts.push(`Additional request: ${extraNote}`);
   return parts.join(' ');
 }
 
-function syncContentColor(value, source) {
-  aiSelections.contentCustomColor = value;
+function syncTitleColor(value, source) {
+  aiSelections.titleCustomColor = value;
   if (source === 'picker') {
-    document.getElementById('contentColorText').value = value;
+    document.getElementById('titleColorText').value = value;
   } else if (/^#[0-9a-fA-F]{6}$/.test(value)) {
-    document.getElementById('contentColorPicker').value = value;
+    document.getElementById('titleColorPicker').value = value;
+  }
+}
+
+function syncSalaryColor(value, source) {
+  aiSelections.salaryCustomColor = value;
+  if (source === 'picker') {
+    document.getElementById('salaryColorText').value = value;
+  } else if (/^#[0-9a-fA-F]{6}$/.test(value)) {
+    document.getElementById('salaryColorPicker').value = value;
   }
 }
 
@@ -820,9 +829,13 @@ document.addEventListener('DOMContentLoaded', () => {
         if (row) row.style.display = btn.dataset.value === 'custom' ? 'flex' : 'none';
       }
 
-      // Show/hide content color custom picker
-      if (group === 'contentColor') {
-        const row = document.getElementById('contentColorPickerRow');
+      // Show/hide title/salary custom color pickers
+      if (group === 'titleColor') {
+        const row = document.getElementById('titleColorPickerRow');
+        if (row) row.style.display = btn.dataset.value === 'custom' ? 'flex' : 'none';
+      }
+      if (group === 'salaryColor') {
+        const row = document.getElementById('salaryColorPickerRow');
         if (row) row.style.display = btn.dataset.value === 'custom' ? 'flex' : 'none';
       }
     });
@@ -1062,7 +1075,8 @@ window.generateAITemplate = generateAITemplate;
 window.downloadAITemplatePreview = downloadAITemplatePreview;
 window.fillExample = fillExample;
 window.syncHeadlineColor = syncHeadlineColor;
-window.syncContentColor = syncContentColor;
+window.syncTitleColor = syncTitleColor;
+window.syncSalaryColor = syncSalaryColor;
 window.updateCustomPalette = updateCustomPalette;
 window.saveAITemplateToGallery = saveAITemplateToGallery;
 window.useHistoryTemplate = useHistoryTemplate;

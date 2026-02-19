@@ -1187,7 +1187,7 @@ STRICT REQUIREMENTS:
    - {{salary}} - salary range text (ALREADY includes $ symbol, e.g. "$2,500 - $3,500" — do NOT add $ prefix/icon)
    - {{location}} - location text
    - {{schedule}} - work schedule text
-   - {{jobCode}} - job reference code (MAY BE EMPTY — if NOT empty, place it DIRECTLY BELOW the job title on its own line, small muted text: font-size 14px, color #888, font-weight 400, no label prefix, no parentheses unless you stylistically want them. If empty, render nothing at all.)
+   - {{jobCode}} - job reference code (MAY BE EMPTY — if NOT empty, place it DIRECTLY BELOW the job title on its own line, font-size 18px–20px, font-weight 600, color should contrast clearly against the background — NOT muted or grey. If empty, render nothing at all.)
    - {{responsibilities}} - HTML <li> items for responsibilities list
    - {{qualifications}} - HTML <li> items for qualifications list
    - {{dot1Color}} through {{dot5Color}} - decorative dot colors (use these as-is for any dot/circle decorations)
@@ -1216,13 +1216,15 @@ STRICT REQUIREMENTS:
 
 4. FONT SIZE SCALE (1080x1080px canvas — use these sizes):
    - Job Title:        48px–60px  (PP Mori, weight 600)
-   - Section Labels:   12px–14px  (uppercase, letter-spacing 1-2px)
-   - Salary Value:     28px–36px  (PP Mori, weight 600, use {{primary}} color)
-   - Location/Schedule: 20px–24px (PP Neue Montreal)
-   - List items:       15px–18px  (PP Neue Montreal, line-height 1.6)
+   - Job Code:         18px–20px  (PP Mori, weight 600, clearly visible — NOT grey/muted)
+   - Section Labels:   14px–16px  (uppercase, letter-spacing 1-2px, opacity 1.0 — fully opaque, no fading)
+   - Salary Value:     32px–40px  (PP Mori, weight 600 — make it LARGE and prominent)
+   - Location/Schedule: 20px–24px (PP Neue Montreal, opacity 1.0 — fully visible, no transparency)
+   - List items:       16px–18px  (PP Neue Montreal, line-height 1.6, fully opaque)
    - Badge/Button text: 16px–20px (PP Mori, weight 600, uppercase)
    - Footer URL:       13px–15px
    - Logo image height: 40px–52px
+   IMPORTANT: Do NOT use low opacity (opacity < 0.9) on any text. All text must be clearly readable.
 
 5. ALWAYS include:
    - Sagan logo (top area, height 44-52px)

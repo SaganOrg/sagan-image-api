@@ -302,34 +302,53 @@
                   </div>
                 </div>
 
-                <!-- JOB TITLE & SALARY COLOR -->
+                <!-- JOB TITLE COLOR -->
                 <div class="selector-group">
-                  <div class="selector-label">Job Title & Salary Color</div>
+                  <div class="selector-label">Job Title Color</div>
                   <div class="selector-btns">
-                    <button class="sel-btn bg-btn active" data-group="contentColor" data-value="white">
+                    <button class="sel-btn bg-btn active" data-group="titleColor" data-value="white">
                       <span class="bg-dot" style="background:#ffffff;border:1px solid #ccc;"></span>White
                     </button>
-                    <button class="sel-btn bg-btn" data-group="contentColor" data-value="yellow">
-                      <span class="bg-dot" style="background:#f5b801;"></span>Yellow
-                    </button>
-                    <button class="sel-btn bg-btn" data-group="contentColor" data-value="dark-teal">
-                      <span class="bg-dot" style="background:#093a3e;"></span>Dark Teal
-                    </button>
-                    <button class="sel-btn bg-btn" data-group="contentColor" data-value="blue">
+                    <button class="sel-btn bg-btn" data-group="titleColor" data-value="blue">
                       <span class="bg-dot" style="background:#25a2ff;"></span>Blue
                     </button>
-                    <button class="sel-btn bg-btn" data-group="contentColor" data-value="coral">
+                    <button class="sel-btn bg-btn" data-group="titleColor" data-value="coral">
                       <span class="bg-dot" style="background:#ff7455;"></span>Coral
                     </button>
-                    <button class="sel-btn bg-btn" data-group="contentColor" data-value="custom">
+                    <button class="sel-btn bg-btn" data-group="titleColor" data-value="custom">
                       <span class="bg-dot" style="background:conic-gradient(#f5b801,#73e491,#25a2ff,#ff7455,#796aff,#f5b801);"></span>Custom
                     </button>
                   </div>
-                  <div class="custom-bg-row" id="contentColorPickerRow" style="display:none;">
-                    <input type="color" id="contentColorPicker" value="#ffffff"
-                      oninput="syncContentColor(this.value, 'picker')">
-                    <input type="text" id="contentColorText" placeholder="#hex or color name..."
-                      oninput="syncContentColor(this.value, 'text')">
+                  <div class="custom-bg-row" id="titleColorPickerRow" style="display:none;">
+                    <input type="color" id="titleColorPicker" value="#ffffff"
+                      oninput="syncTitleColor(this.value, 'picker')">
+                    <input type="text" id="titleColorText" placeholder="#hex or color name..."
+                      oninput="syncTitleColor(this.value, 'text')">
+                  </div>
+                </div>
+
+                <!-- SALARY COLOR -->
+                <div class="selector-group">
+                  <div class="selector-label">Salary Color</div>
+                  <div class="selector-btns">
+                    <button class="sel-btn bg-btn active" data-group="salaryColor" data-value="white">
+                      <span class="bg-dot" style="background:#ffffff;border:1px solid #ccc;"></span>White
+                    </button>
+                    <button class="sel-btn bg-btn" data-group="salaryColor" data-value="blue">
+                      <span class="bg-dot" style="background:#25a2ff;"></span>Blue
+                    </button>
+                    <button class="sel-btn bg-btn" data-group="salaryColor" data-value="coral">
+                      <span class="bg-dot" style="background:#ff7455;"></span>Coral
+                    </button>
+                    <button class="sel-btn bg-btn" data-group="salaryColor" data-value="custom">
+                      <span class="bg-dot" style="background:conic-gradient(#f5b801,#73e491,#25a2ff,#ff7455,#796aff,#f5b801);"></span>Custom
+                    </button>
+                  </div>
+                  <div class="custom-bg-row" id="salaryColorPickerRow" style="display:none;">
+                    <input type="color" id="salaryColorPicker" value="#ffffff"
+                      oninput="syncSalaryColor(this.value, 'picker')">
+                    <input type="text" id="salaryColorText" placeholder="#hex or color name..."
+                      oninput="syncSalaryColor(this.value, 'text')">
                   </div>
                 </div>
 
