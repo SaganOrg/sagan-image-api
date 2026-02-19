@@ -40,22 +40,22 @@ const PERSON_PHOTOS = [
 
 // Sagan Brand Theme - Always Blue
 const THEME = {
-  primary: '#25a2ff',      // Sagan mavi
-  secondary: '#093a3e',    // Koyu teal (başlıklar)
-  background: '#ede9e5',   // Krem arka plan
-  accent: '#25a2ff',       // Sagan mavi
-  text: '#000000',         // Siyah metin
-  lightBg: '#f5f5f5'       // Açık arka plan
+  primary: '#25a2ff',      // Sagan blue
+  secondary: '#093a3e',    // Dark teal (headings)
+  background: '#ede9e5',   // Cream background
+  accent: '#25a2ff',       // Sagan blue
+  text: '#000000',         // Black text
+  lightBg: '#f5f5f5'       // Light background
 };
 
-// Dot Styles - 5'li nokta renk kombinasyonları
+// Dot color styles - 5-color combinations
 const DOT_STYLES = {
-  default: ['#f5b801', '#73e491', '#25a2ff', '#ff7455', '#9e988f'],  // Sarı, Yeşil, Mavi, Coral, Gri
-  vibrant: ['#796aff', '#25a2ff', '#73e491', '#ff7455', '#f5b801'],  // Mor, Mavi, Yeşil, Coral, Altın
-  warm: ['#ff7455', '#f5b801', '#611f2c', '#9e988f', '#cac1b4'],     // Coral, Altın, Bordo, Gri tonları
-  cool: ['#796aff', '#25a2ff', '#093a3e', '#73e491', '#9e988f'],     // Mor, Mavi, Teal, Yeşil, Gri
-  mono: ['#093a3e', '#25a2ff', '#73e491', '#9e988f', '#dbd7d1'],     // Teal, Mavi, Yeşil, Gri tonları
-  none: []  // Nokta yok
+  default: ['#f5b801', '#73e491', '#25a2ff', '#ff7455', '#9e988f'],  // Yellow, Green, Blue, Coral, Gray
+  vibrant: ['#796aff', '#25a2ff', '#73e491', '#ff7455', '#f5b801'],  // Purple, Blue, Green, Coral, Gold
+  warm:    ['#ff7455', '#f5b801', '#611f2c', '#9e988f', '#cac1b4'],  // Coral, Gold, Burgundy, Gray tones
+  cool:    ['#796aff', '#25a2ff', '#093a3e', '#73e491', '#9e988f'],  // Purple, Blue, Teal, Green, Gray
+  mono:    ['#093a3e', '#25a2ff', '#73e491', '#9e988f', '#dbd7d1'],  // Teal, Blue, Green, Gray tones
+  none: []  // No dots
 };
 
 const DOT_STYLE_NAMES = Object.keys(DOT_STYLES);
