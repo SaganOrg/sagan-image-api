@@ -636,6 +636,8 @@ const aiSelections = {
   headlineFontSize: 'medium',
   headlineColor: 'dark-teal',
   headlineCustomColor: '',
+  contentColor: 'white',
+  contentCustomColor: '',
   palette: 'classic',
   logoStyle: 'dark',
   dotStyle: 'default',
@@ -685,8 +687,8 @@ const DOT_COLOR_MAP = {
 
 const OUTPUT_TYPE_PROMPTS = {
   'single':         '',
-  'carousel-cover': 'OUTPUT TYPE — CAROUSEL COVER: Design this as the FIRST slide of a carousel series. Include a bold "We Are Hiring" or "Now Hiring" headline. Show {{jobTitle}} as one example job. Use the {{responsibilities}} area to visually list multiple job openings (treat each <li> as a job title pill/row). Make it eye-catching — it must grab attention as the cover slide. Less text detail, more visual impact.',
-  'carousel-slide': 'OUTPUT TYPE — CAROUSEL DETAIL SLIDE: Design this as a mid-carousel slide showing full details for ONE job. Show all job fields: title (large), salary, location, schedule, responsibilities and qualifications in a structured layout. Add a subtle "slide X of Y" or swipe indicator visual cue at the bottom if it fits. Should feel like a continuation of a carousel series.'
+  'carousel-cover': 'OUTPUT TYPE — CAROUSEL COVER: Design this as the cover/first slide of a carousel. Show {{jobTitle}} as one example job. Use the {{responsibilities}} area to visually list multiple job openings (treat each <li> as a job title pill/row). Make it eye-catching. Do NOT include any slide numbering ("1/4"), swipe indicators, or progress dots. Keep the footer clean — only the website URL, nothing overlapping.',
+  'carousel-slide': 'OUTPUT TYPE — CAROUSEL DETAIL SLIDE: Design this as a detail slide showing full details for ONE job. Show all job fields: title (large), salary, location, schedule, responsibilities and qualifications in a structured layout. Do NOT include any slide numbering ("1/4", "slide X of Y"), swipe indicators ("Swipe to explore →"), or progress dots. Keep the footer clean — only the website URL www.saganrecruitment.com/career, nothing else overlapping it.'
 };
 
 const DECORATION_PROMPTS = {
@@ -749,8 +751,29 @@ function buildAIPrompt() {
     parts.push(`HEADLINE TEXT (REQUIRED): Display the text "${hlText}" very prominently near the top of the design. Font-size: ${hlSize}. Color: ${hlColor}. Use PP Mori SemiBold (font-weight 600). This is the main attention-grabbing heading of the carousel cover.`);
   }
 
+  // Job Title & Salary color
+  const contentColorMap = {
+    'white':     '#ffffff',
+    'dark-teal': '#093a3e',
+    'yellow':    '#f5b801',
+    'blue':      '#25a2ff',
+    'coral':     '#ff7455',
+    'custom':    aiSelections.contentCustomColor || '#ffffff'
+  };
+  const contentHex = contentColorMap[aiSelections.contentColor] || '#ffffff';
+  parts.push(`JOB TITLE and SALARY VALUE must both use color ${contentHex}. Apply this color to the {{jobTitle}} text and the {{salary}} text elements.`);
+
   if (extraNote) parts.push(`Additional request: ${extraNote}`);
   return parts.join(' ');
+}
+
+function syncContentColor(value, source) {
+  aiSelections.contentCustomColor = value;
+  if (source === 'picker') {
+    document.getElementById('contentColorText').value = value;
+  } else if (/^#[0-9a-fA-F]{6}$/.test(value)) {
+    document.getElementById('contentColorPicker').value = value;
+  }
 }
 
 function syncHeadlineColor(value, source) {
@@ -794,6 +817,12 @@ document.addEventListener('DOMContentLoaded', () => {
       // Show/hide headline custom color picker
       if (group === 'headlineColor') {
         const row = document.getElementById('headlineColorPickerRow');
+        if (row) row.style.display = btn.dataset.value === 'custom' ? 'flex' : 'none';
+      }
+
+      // Show/hide content color custom picker
+      if (group === 'contentColor') {
+        const row = document.getElementById('contentColorPickerRow');
         if (row) row.style.display = btn.dataset.value === 'custom' ? 'flex' : 'none';
       }
     });
@@ -1033,6 +1062,7 @@ window.generateAITemplate = generateAITemplate;
 window.downloadAITemplatePreview = downloadAITemplatePreview;
 window.fillExample = fillExample;
 window.syncHeadlineColor = syncHeadlineColor;
+window.syncContentColor = syncContentColor;
 window.updateCustomPalette = updateCustomPalette;
 window.saveAITemplateToGallery = saveAITemplateToGallery;
 window.useHistoryTemplate = useHistoryTemplate;
