@@ -1356,10 +1356,13 @@ select:focus {
 }
 
 .ai-history-item {
-  padding: 16px 24px;
+  padding: 14px 16px 14px 16px;
   border-bottom: 1px solid var(--border);
   cursor: pointer;
   transition: background 0.2s;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
 }
 
 .ai-history-item:hover {
@@ -1368,6 +1371,29 @@ select:focus {
 
 .ai-history-item:last-child {
   border-bottom: none;
+}
+
+.ai-history-thumb {
+  width: 54px;
+  height: 54px;
+  border-radius: 8px;
+  object-fit: cover;
+  flex-shrink: 0;
+  border: 1px solid var(--border);
+}
+
+.ai-history-thumb-placeholder {
+  width: 54px;
+  height: 54px;
+  border-radius: 8px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.ai-history-content {
+  flex: 1;
+  min-width: 0;
 }
 
 .ai-history-name {

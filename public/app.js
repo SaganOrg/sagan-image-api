@@ -1011,6 +1011,23 @@ function fillExample(text) {
   document.getElementById('aiTemplatePrompt').value = text;
 }
 
+// Create a small JPEG thumbnail from a base64 image (for localStorage storage)
+function createThumbnail(base64, maxSize = 300) {
+  return new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const ratio = Math.min(maxSize / img.width, maxSize / img.height);
+      canvas.width = Math.round(img.width * ratio);
+      canvas.height = Math.round(img.height * ratio);
+      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+      resolve(canvas.toDataURL('image/jpeg', 0.65));
+    };
+    img.onerror = () => resolve(null);
+    img.src = base64;
+  });
+}
+
 async function generateAITemplate() {
   const prompt = buildAIPrompt();
   const nameInput = document.getElementById('aiTemplateName').value.trim();
@@ -1043,24 +1060,6 @@ async function generateAITemplate() {
     const data = await response.json();
     showToast(`Template "${data.templateId}" created!`, 'success');
 
-    // Now preview it (pass dot/logo style so preview matches selections)
-    const previewResponse = await fetch(`${API_URL}/api/template-preview/${data.templateId}?dotStyle=${aiSelections.dotStyle}&logoStyle=${aiSelections.logoStyle}`);
-    if (previewResponse.ok) {
-      const blob = await previewResponse.blob();
-      const reader = new FileReader();
-      reader.onload = () => {
-        aiTemplatePreviewImage = reader.result;
-        previewWrap.innerHTML = `<img src="${aiTemplatePreviewImage}" alt="Generated Template" style="width:100%;border-radius:8px;">`;
-        document.getElementById('aiTemplatePreviewActions').style.display = 'flex';
-      };
-      reader.readAsDataURL(blob);
-    } else {
-      previewWrap.innerHTML = `<div style="padding:40px;text-align:center;color:#666;">Template saved as <strong>${data.templateId}</strong>.<br>View it in the Templates gallery.</div>`;
-    }
-
-    // Save to history with outputType
-    saveAITemplateHistory(data.templateId, prompt, aiSelections.outputType);
-
     // Add to correct dropdown based on output type
     const label = templateName.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
     if (aiSelections.outputType === 'carousel-cover') {
@@ -1080,8 +1079,27 @@ async function generateAITemplate() {
       }
     }
 
-    // Refresh template gallery history
-    loadAITemplateHistory();
+    // Now preview it (pass dot/logo style so preview matches selections)
+    const previewResponse = await fetch(`${API_URL}/api/template-preview/${data.templateId}?dotStyle=${aiSelections.dotStyle}&logoStyle=${aiSelections.logoStyle}`);
+    if (previewResponse.ok) {
+      const blob = await previewResponse.blob();
+      const reader = new FileReader();
+      reader.onload = async () => {
+        aiTemplatePreviewImage = reader.result;
+        previewWrap.innerHTML = `<img src="${aiTemplatePreviewImage}" alt="Generated Template" style="width:100%;border-radius:8px;">`;
+        document.getElementById('aiTemplatePreviewActions').style.display = 'flex';
+
+        // Create small thumbnail and save to history (survives server restarts)
+        const thumb = await createThumbnail(aiTemplatePreviewImage, 300);
+        saveAITemplateHistory(data.templateId, prompt, aiSelections.outputType, thumb);
+        loadAITemplateHistory();
+      };
+      reader.readAsDataURL(blob);
+    } else {
+      previewWrap.innerHTML = `<div style="padding:40px;text-align:center;color:#666;">Template saved as <strong>${data.templateId}</strong>.<br>View it in the Templates gallery.</div>`;
+      saveAITemplateHistory(data.templateId, prompt, aiSelections.outputType, null);
+      loadAITemplateHistory();
+    }
 
     // Clear input
     document.getElementById('aiTemplateName').value = '';
@@ -1126,13 +1144,14 @@ function saveAITemplateToGallery() {
   showToast('Saved to Template Gallery!', 'success');
 }
 
-function saveAITemplateHistory(templateId, prompt, outputType) {
+function saveAITemplateHistory(templateId, prompt, outputType, previewImage) {
   const history = JSON.parse(localStorage.getItem('aiTemplateHistory') || '[]');
   history.unshift({
     templateId,
-    prompt: prompt.substring(0, 80) + (prompt.length > 80 ? '...' : ''),
+    prompt: prompt.substring(0, 100) + (prompt.length > 100 ? '...' : ''),
     createdAt: new Date().toLocaleDateString('en-US'),
-    outputType: outputType || 'single'
+    outputType: outputType || 'single',
+    previewImage: previewImage || null   // stored thumbnail so preview works after server restart
   });
   // Keep only last 10
   localStorage.setItem('aiTemplateHistory', JSON.stringify(history.slice(0, 10)));
@@ -1150,14 +1169,19 @@ function loadAITemplateHistory() {
 
   container.innerHTML = history.map((h, i) => `
     <div class="ai-history-item" onclick="previewHistoryTemplate('${h.templateId}')">
-      <div class="ai-history-top">
-        <div>
-          <div class="ai-history-name">${h.templateId}</div>
-          <div class="ai-history-date">${h.createdAt}${h.outputType ? ' · ' + h.outputType : ''}</div>
+      ${h.previewImage
+        ? `<img class="ai-history-thumb" src="${h.previewImage}" alt="">`
+        : `<div class="ai-history-thumb-placeholder"></div>`}
+      <div class="ai-history-content">
+        <div class="ai-history-top">
+          <div>
+            <div class="ai-history-name">${h.templateId}</div>
+            <div class="ai-history-date">${h.createdAt}${h.outputType ? ' · ' + h.outputType : ''}</div>
+          </div>
+          <button class="ai-history-delete" onclick="event.stopPropagation(); deleteAIHistoryItem(${i})" title="Remove">×</button>
         </div>
-        <button class="ai-history-delete" onclick="event.stopPropagation(); deleteAIHistoryItem(${i})" title="Remove">×</button>
+        <div class="ai-history-prompt">${h.prompt}</div>
       </div>
-      <div class="ai-history-prompt">${h.prompt}</div>
     </div>
   `).join('');
 }
@@ -1171,8 +1195,11 @@ function deleteAIHistoryItem(index) {
 }
 
 function previewHistoryTemplate(templateId) {
+  const history = JSON.parse(localStorage.getItem('aiTemplateHistory') || '[]');
+  const item = history.find(h => h.templateId === templateId);
   const name = templateId.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-  showTemplatePreview(templateId, name);
+  // Use stored thumbnail if available — works even after server restarts
+  showTemplatePreview(templateId, name, item?.previewImage || null);
 }
 
 function useHistoryTemplate(templateId) {
