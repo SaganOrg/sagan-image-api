@@ -938,13 +938,19 @@ function buildAIPrompt() {
   if (aiSelections.palette === 'none') {
     palettePrompt = `Color palette: Choose the most visually striking combination from the Sagan brand colors. Use your best judgement for background, headings, accents and buttons. If no strong accent color is needed, default the accent to match the background color.`;
   } else if (aiSelections.palette === 'custom') {
-    const c1 = document.getElementById('cp1')?.value || '#25a2ff';
-    const c2 = document.getElementById('cp2')?.value || '#f5b801';
-    const accentAuto = document.getElementById('cp3Auto')?.checked;
-    const c3 = accentAuto ? c1 : (document.getElementById('cp3')?.value || '#ff7455');
-    const c4 = document.getElementById('cp4')?.value || '#093a3e';
-    const accentNote = accentAuto ? ` (Accent defaults to background color — blend it in rather than using a contrasting accent.)` : '';
-    palettePrompt = `CUSTOM COLOR PALETTE (use ONLY these exact colors — REQUIRED): Background: ${c1}, Primary/headings: ${c2}, Accent/buttons/highlights: ${c3}${accentNote}, Text/body: ${c4}. Build the entire design around these specific colors. Do not substitute with other colors.`;
+    const isNone = (id) => document.getElementById(id + 'None')?.checked;
+    const val = (id, fallback) => isNone(id) ? null : (document.getElementById(id)?.value || fallback);
+    const c1 = val('cp1', '#25a2ff');
+    const c2 = val('cp2', '#f5b801');
+    const c3 = val('cp3', '#ff7455');
+    const c4 = val('cp4', '#093a3e');
+    const parts2 = [];
+    if (c1) parts2.push(`Background: ${c1}`);
+    if (c2) parts2.push(`Primary/headings: ${c2}`);
+    if (c3) parts2.push(`Accent/buttons/highlights: ${c3}`);
+    else parts2.push(`Accent/buttons/highlights: choose the best contrast color from the Sagan brand palette`);
+    if (c4) parts2.push(`Text/body: ${c4}`);
+    palettePrompt = `CUSTOM COLOR PALETTE: ${parts2.join(', ')}. For fields marked as "choose best", pick freely from Sagan brand colors. Keep the design professional and on-brand.`;
   } else {
     palettePrompt = `Color palette: ${PALETTE_PROMPTS[aiSelections.palette]}`;
   }
@@ -1017,15 +1023,11 @@ function syncHeadlineColor(value, source) {
   }
 }
 
-function toggleAccentAuto(checkbox) {
-  const cp3 = document.getElementById('cp3');
-  if (cp3) cp3.disabled = checkbox.checked;
-  if (checkbox.checked) {
-    // Mirror background color into accent swatch visually
-    const c1 = document.getElementById('cp1')?.value || '#25a2ff';
-    if (cp3) cp3.value = c1;
-    updateCustomPalette();
-  }
+function toggleColorNone(id) {
+  const checkbox = document.getElementById(id + 'None');
+  const picker = document.getElementById(id);
+  if (picker) picker.disabled = checkbox?.checked;
+  updateCustomPalette();
 }
 
 function updateCustomPalette() {
@@ -1423,7 +1425,7 @@ window.syncHeadlineColor = syncHeadlineColor;
 window.syncTitleColor = syncTitleColor;
 window.syncSalaryColor = syncSalaryColor;
 window.updateCustomPalette = updateCustomPalette;
-window.toggleAccentAuto = toggleAccentAuto;
+window.toggleColorNone = toggleColorNone;
 window.saveAITemplateToGallery = saveAITemplateToGallery;
 window.useHistoryTemplate = useHistoryTemplate;
 window.switchTemplateTab = switchTemplateTab;

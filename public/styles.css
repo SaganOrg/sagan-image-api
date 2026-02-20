@@ -1077,7 +1077,7 @@ select:focus {
   border-radius: 4px;
 }
 
-.pal-auto-label {
+.pal-none-label {
   display: flex;
   align-items: center;
   gap: 4px;
