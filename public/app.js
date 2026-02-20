@@ -1141,6 +1141,7 @@ document.addEventListener('DOMContentLoaded', () => {
           if (swatch) swatch.classList.add('is-none');
           if (hexInput) { hexInput.value = ''; hexInput.placeholder = 'None'; hexInput.disabled = true; }
         });
+        updateCustomPalette();
         if (row) row.style.display = 'flex';
       } else {
         if (row) row.style.display = 'none';
