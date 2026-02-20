@@ -1031,6 +1031,15 @@ function toggleColorNone(id) {
   updateCustomPalette();
 }
 
+// Called when user picks a color — auto-deactivates the None icon
+function activateColor(id) {
+  const noneBtn = document.getElementById(id + 'None');
+  if (noneBtn) noneBtn.classList.remove('active');
+  const picker = document.getElementById(id);
+  if (picker) picker.disabled = false;
+  updateCustomPalette();
+}
+
 function updateCustomPalette() {
   const c1 = document.getElementById('cp1')?.value || '#25a2ff';
   const c2 = document.getElementById('cp2')?.value || '#f5b801';
@@ -1438,6 +1447,7 @@ window.syncTitleColor = syncTitleColor;
 window.syncSalaryColor = syncSalaryColor;
 window.updateCustomPalette = updateCustomPalette;
 window.toggleColorNone = toggleColorNone;
+window.activateColor = activateColor;
 window.saveAITemplateToGallery = saveAITemplateToGallery;
 window.useHistoryTemplate = useHistoryTemplate;
 window.switchTemplateTab = switchTemplateTab;

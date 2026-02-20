@@ -1102,13 +1102,13 @@ select:focus {
   background: linear-gradient(
     to bottom right,
     transparent calc(50% - 1.5px),
-    #e53e3e calc(50% - 1.5px),
-    #e53e3e calc(50% + 1.5px),
+    #f5b801 calc(50% - 1.5px),
+    #f5b801 calc(50% + 1.5px),
     transparent calc(50% + 1.5px)
   );
 }
 .pal-no-color.active {
-  border-color: #e53e3e;
+  border-color: #f5b801;
   opacity: 1;
 }
 .pal-no-color:not(.active) {
