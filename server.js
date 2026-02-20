@@ -237,7 +237,8 @@ app.get('/api/airtable/jobs', async (req, res) => {
     }
 
     // Fetch all records, sorted by newest first (using Airtable's internal created time)
-    const airtableUrl = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(AIRTABLE_TABLE_NAME)}?pageSize=50`;
+    const AIRTABLE_VIEW = process.env.AIRTABLE_VIEW || "Ozlem's Grid 2";
+    const airtableUrl = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(AIRTABLE_TABLE_NAME)}?view=${encodeURIComponent(AIRTABLE_VIEW)}&pageSize=50`;
     console.log('Fetching Airtable:', airtableUrl);
 
     const response = await fetch(airtableUrl, {
