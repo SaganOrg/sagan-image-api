@@ -1229,6 +1229,17 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
+  // Init custom palette swatches to None state on load
+  ['cp1','cp2','cp3','cp4'].forEach(id => {
+    const noneBtn = document.getElementById(id + 'None');
+    const swatch = document.getElementById(id + 'Swatch');
+    const hexInput = document.getElementById(id + 'Hex');
+    if (noneBtn) noneBtn.classList.add('active');
+    if (swatch) swatch.classList.add('is-none');
+    if (hexInput) { hexInput.value = ''; hexInput.placeholder = 'None'; hexInput.disabled = true; }
+  });
+  updateCustomPalette();
+
   // AI Template logo buttons (separate from Generate tab)
   document.querySelectorAll('#page-ai-template .logo-btn').forEach(btn => {
     btn.addEventListener('click', () => {
