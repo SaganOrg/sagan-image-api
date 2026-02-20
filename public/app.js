@@ -628,9 +628,12 @@ function syncTemplateDropdown(templates, aiOutputTypeMap = {}) {
         slideSelect.add(new Option(`${t.name} (AI)`, t.id));
       }
     } else if (!CAROUSEL_TEMPLATE_IDS.has(t.id) && !MULTI_JOB_IDS.has(t.id)) {
-      // Single template — add to single select
+      // Single template — add to single select AND slide select
       if (singleSelect && !Array.from(singleSelect.options).some(o => o.value === t.id)) {
         singleSelect.add(new Option(t.name, t.id));
+      }
+      if (slideSelect && !Array.from(slideSelect.options).some(o => o.value === t.id)) {
+        slideSelect.add(new Option(t.name, t.id));
       }
     }
   });
