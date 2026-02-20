@@ -270,6 +270,7 @@ app.get('/api/airtable/jobs', async (req, res) => {
         jobCode: record.fields['Job Code'] || record.fields['Code'] || '',
         requestId: record.fields['Request ID'] || record.fields['Req ID'] || record.fields['ID'] || '',
         requestName: record.fields['Request Name'] || record.fields['Hiring Request Name'] || record.fields['Request'] || '',
+        hrNumber: (() => { const m = (record.fields['Request Name'] || '').match(/\[?(HR\d+)\]?/i); return m ? m[1] : ''; })(),
         salary: record.fields['Salary'] || record.fields['Salary Range'] || parsed.salary || '',
         location: record.fields['Location'] || parsed.location || 'Remote',
         schedule: record.fields['Schedule'] || record.fields['Work Schedule'] || parsed.schedule || 'Full-time',

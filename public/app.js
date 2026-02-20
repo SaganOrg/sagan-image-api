@@ -225,8 +225,8 @@ function renderJobs(searchQuery = '') {
   }
 
   container.innerHTML = filteredJobs.map(job => {
-    const requestBadge = (job.requestId || job.requestName)
-      ? `<div class="job-request-badge">${[job.requestId, job.requestName].filter(Boolean).join(' · ')}</div>`
+    const hrBadge = job.hrNumber
+      ? `<span class="job-hr-badge">${job.hrNumber}</span>`
       : '';
     return `
     <div class="job-card ${state.selectedJobs.has(job.id) ? 'selected' : ''}"
@@ -234,8 +234,10 @@ function renderJobs(searchQuery = '') {
          onclick="toggleJob('${job.id}')">
       <div class="job-checkbox"></div>
       <div class="job-info">
-        <div class="job-title">${job.title}</div>
-        ${requestBadge}
+        <div class="job-title-row">
+          <span class="job-title">${job.title}</span>
+          ${hrBadge}
+        </div>
         <div class="job-meta">
           <span class="job-salary">${job.salary || 'Salary TBD'}</span>
           <span>${job.location}</span>
