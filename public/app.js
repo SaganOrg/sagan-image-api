@@ -1067,12 +1067,23 @@ function activateColor(id) {
 }
 
 function updateCustomPalette() {
-  const c1 = document.getElementById('cp1')?.value || '#25a2ff';
-  const c2 = document.getElementById('cp2')?.value || '#f5b801';
-  const c3 = document.getElementById('cp3')?.value || '#ff7455';
-  const c4 = document.getElementById('cp4')?.value || '#093a3e';
-  // Sync swatches on the Custom card
-  const s = (id, color) => { const el = document.getElementById(id); if (el) el.style.background = color; };
+  const isNone = (id) => document.getElementById(id + 'None')?.classList.contains('active');
+  const getColor = (id, fallback) => isNone(id) ? null : (document.getElementById(id)?.value || fallback);
+  const c1 = getColor('cp1', '#25a2ff');
+  const c2 = getColor('cp2', '#f5b801');
+  const c3 = getColor('cp3', '#ff7455');
+  const c4 = getColor('cp4', '#093a3e');
+  const s = (id, color) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (color) {
+      el.style.background = color;
+      el.style.opacity = '1';
+    } else {
+      el.style.background = '#e8e8e8';
+      el.style.opacity = '0.4';
+    }
+  };
   s('customPalSwatch1', c1);
   s('customPalSwatch2', c2);
   s('customPalSwatch3', c3);
