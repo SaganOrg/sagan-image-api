@@ -1082,22 +1082,27 @@ select:focus {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   flex: 1;
 }
 
 .pal-swatch {
   width: 100%;
   aspect-ratio: 1;
-  border-radius: 10px;
-  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  border: 1.5px solid #e8e8e8;
   position: relative;
   cursor: pointer;
   overflow: hidden;
-  transition: border-color 0.15s;
-  min-height: 56px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  min-height: 44px;
+  max-height: 56px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
 }
-.pal-swatch:hover { border-color: #aaa; }
+.pal-swatch:hover {
+  border-color: #ccc;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.13);
+}
 .pal-swatch input[type="color"] {
   position: absolute;
   inset: 0;
@@ -1111,8 +1116,9 @@ select:focus {
 
 /* None state */
 .pal-swatch.is-none {
-  background: #fff !important;
-  border-color: #e0e0e0;
+  background: #fafafa !important;
+  border-color: #e8e8e8;
+  box-shadow: none;
 }
 .pal-swatch.is-none::after {
   content: '';
@@ -1120,56 +1126,64 @@ select:focus {
   inset: 0;
   background: linear-gradient(
     to bottom right,
-    transparent calc(50% - 1.5px),
-    #f5b801 calc(50% - 1.5px),
-    #f5b801 calc(50% + 1.5px),
-    transparent calc(50% + 1.5px)
+    transparent calc(50% - 1px),
+    #e53e3e calc(50% - 1px),
+    #e53e3e calc(50% + 1px),
+    transparent calc(50% + 1px)
   );
   pointer-events: none;
 }
 
-/* None badge — top-right corner of swatch */
+/* None badge — top-right corner */
 .pal-none-btn {
   position: absolute;
-  top: 4px;
-  right: 4px;
-  font-size: 9px;
+  top: 3px;
+  right: 3px;
+  font-size: 8px;
   font-weight: 700;
-  text-transform: uppercase;
-  padding: 2px 5px;
-  border-radius: 4px;
+  letter-spacing: 0.2px;
+  padding: 1px 4px;
+  border-radius: 3px;
   border: none;
   cursor: pointer;
   z-index: 2;
-  background: rgba(255,255,255,0.85);
-  color: #bbb;
+  background: rgba(255,255,255,0.9);
+  color: #ccc;
   transition: background 0.15s, color 0.15s;
+  line-height: 1.6;
+  text-transform: uppercase;
 }
 .pal-none-btn.active {
-  background: #f5b801;
+  background: #e53e3e;
   color: #fff;
 }
-.pal-none-btn:hover { background: #f5b801; color: #fff; }
+.pal-none-btn:hover {
+  background: #e53e3e;
+  color: #fff;
+}
 
 .pal-hex-input {
   width: 100%;
-  font-size: 12px;
+  font-size: 11px;
   font-family: monospace;
-  border: 1px solid #e0e0e0;
-  border-radius: 6px;
-  padding: 4px 6px;
+  border: 1px solid #ebebeb;
+  border-radius: 5px;
+  padding: 3px 4px;
   text-align: center;
   color: var(--secondary);
-  background: #fafafa;
+  background: #fff;
+  transition: border-color 0.15s;
+  outline: none;
 }
-.pal-hex-input:disabled { color: #ccc; background: #f5f5f5; }
+.pal-hex-input:focus { border-color: #25a2ff; }
+.pal-hex-input:disabled { color: #d0d0d0; background: #f8f8f8; }
 
 .pal-label {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
-  color: var(--text-muted);
+  color: #aaa;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.6px;
 }
 
 .palette-custom-card {
