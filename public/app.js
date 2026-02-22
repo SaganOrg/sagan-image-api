@@ -996,6 +996,8 @@ function showModifyMode() {
       document.querySelectorAll('#modifyDotGroup .dot-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       _modifyDotStyle = btn.dataset.moddot;
+      const picker = document.getElementById('modifyCustomDotPicker');
+      if (picker) picker.style.display = btn.dataset.moddot === 'custom' ? 'flex' : 'none';
     };
   });
 
@@ -1016,6 +1018,20 @@ function cancelModifyMode() {
   document.getElementById('regularFormOptions').style.display = 'block';
   const modReq = document.getElementById('modifyRequest');
   if (modReq) modReq.value = '';
+  // Clear preview
+  const previewWrap = document.getElementById('aiTemplatePreviewWrap');
+  if (previewWrap) previewWrap.innerHTML = '';
+  document.getElementById('aiTemplatePreviewActions').style.display = 'none';
+}
+
+async function confirmExitModifyMode() {
+  const ok = await showConfirm({
+    title: 'Exit Modification Mode',
+    msg: 'Are you done modifying this template?',
+    okLabel: 'Done',
+    type: 'warning'
+  });
+  if (ok) cancelModifyMode();
 }
 
 // Toast
@@ -1092,8 +1108,17 @@ const DOT_COLOR_MAP = {
   'vibrant': ['#796aff', '#25a2ff', '#73e491', '#ff7455', '#f5b801'],
   'warm':    ['#ff7455', '#f5b801', '#611f2c', '#9e988f', '#cac1b4'],
   'cool':    ['#796aff', '#25a2ff', '#093a3e', '#73e491', '#9e988f'],
-  'none':    []
+  'none':    [],
+  'custom':  null   // read dynamically from color pickers
 };
+
+function getCustomDotColors(prefix) {
+  // prefix: 'acd' for AI template page, 'mcd' for modify mode
+  return [1,2,3,4,5].map(i => {
+    const el = document.getElementById(prefix + i);
+    return el ? el.value : '#25a2ff';
+  });
+}
 
 
 const OUTPUT_TYPE_PROMPTS = {
@@ -1116,7 +1141,9 @@ function buildAIPrompt() {
   const decorationPrompt = DECORATION_PROMPTS[aiSelections.decoration];
 
   // Dot colors — send exact hex values so Claude uses the right colors
-  const dotColors = DOT_COLOR_MAP[aiSelections.dotStyle] || DOT_COLOR_MAP.default;
+  const dotColors = aiSelections.dotStyle === 'custom'
+    ? getCustomDotColors('acd')
+    : (DOT_COLOR_MAP[aiSelections.dotStyle] || DOT_COLOR_MAP.default);
   const dotPrompt = dotColors.length > 0
     ? `DECORATIVE DOTS (REQUIRED): use these exact colors for {{dot1Color}} through {{dot5Color}} and any dot/circle decorations: ${dotColors.join(', ')}.`
     : 'No decorative dots.';
@@ -1365,6 +1392,8 @@ document.addEventListener('DOMContentLoaded', () => {
       document.querySelectorAll('#page-ai-template .dot-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       aiSelections.dotStyle = btn.dataset.style;
+      const picker = document.getElementById('aiCustomDotPicker');
+      if (picker) picker.style.display = btn.dataset.style === 'custom' ? 'flex' : 'none';
     });
   });
 });
@@ -1395,9 +1424,10 @@ async function generateAITemplate() {
   const isModify = !!_modifyTemplateId;
   const modReqText = isModify ? document.getElementById('modifyRequest').value.trim() : '';
 
-  // If modification mode with empty textarea AND no special changes needed → just re-preview
-  // Exception: if dotStyle=none, we need AI to actually remove dot elements from HTML
-  if (isModify && !modReqText && _modifyDotStyle !== 'none') {
+  // If modification mode with empty textarea AND no special changes → just re-preview (no Claude call)
+  // Exception: dotStyle=none or custom requires AI to actually modify the HTML
+  const needsAI = _modifyDotStyle === 'none' || _modifyDotStyle === 'custom';
+  if (isModify && !modReqText && !needsAI) {
     const previewWrap = document.getElementById('aiTemplatePreviewWrap');
     previewWrap.innerHTML = `<div class="loading" style="padding:80px 24px;"><div class="spinner"></div><p>Applying changes...</p></div>`;
     try {
@@ -1521,9 +1551,8 @@ async function generateAITemplate() {
       loadAITemplateHistory();
     }
 
-    // Clear input + exit modification mode on success
+    // Clear name input but STAY in modify mode — user exits manually with Done
     document.getElementById('aiTemplateName').value = '';
-    if (isModify) cancelModifyMode();
 
   } catch (error) {
     console.error('AI template error:', error);
@@ -1757,6 +1786,7 @@ window.closeTemplatePreview = closeTemplatePreview;
 window.usePreviewTemplate = usePreviewTemplate;
 window.modifyWithAI = modifyWithAI;
 window.cancelModifyMode = cancelModifyMode;
+window.confirmExitModifyMode = confirmExitModifyMode;
 window.deleteAIHistoryItem = deleteAIHistoryItem;
 window.previewHistoryTemplate = previewHistoryTemplate;
 window.logoutUser = logoutUser;

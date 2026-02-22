@@ -209,7 +209,7 @@
                       <div class="modify-mode-name" id="modifyModeTemplateName">—</div>
                     </div>
                   </div>
-                  <button class="modify-mode-cancel" onclick="cancelModifyMode()">× Cancel</button>
+                  <button class="modify-mode-done" onclick="confirmExitModifyMode()">✓ Done</button>
                 </div>
 
                 <!-- Logo selector in modification mode -->
@@ -231,6 +231,14 @@
                     <button class="dot-btn" data-moddot="warm"><span style="background:#ff7455"></span><span style="background:#f5b801"></span><span style="background:#611f2c"></span><span style="background:#9e988f"></span><span style="background:#cac1b4"></span></button>
                     <button class="dot-btn" data-moddot="cool"><span style="background:#796aff"></span><span style="background:#25a2ff"></span><span style="background:#093a3e"></span><span style="background:#73e491"></span><span style="background:#9e988f"></span></button>
                     <button class="dot-btn" data-moddot="none"><span style="background:#ddd"></span><span style="background:#ddd"></span><span style="background:#ddd"></span><span style="background:#ddd"></span><span style="background:#ddd"></span></button>
+                    <button class="dot-btn dot-btn-custom" data-moddot="custom">Custom</button>
+                  </div>
+                  <div id="modifyCustomDotPicker" class="custom-dot-picker" style="display:none;">
+                    <input type="color" class="dot-color-input" id="mcd1" value="#f5b801" title="Dot 1">
+                    <input type="color" class="dot-color-input" id="mcd2" value="#73e491" title="Dot 2">
+                    <input type="color" class="dot-color-input" id="mcd3" value="#25a2ff" title="Dot 3">
+                    <input type="color" class="dot-color-input" id="mcd4" value="#ff7455" title="Dot 4">
+                    <input type="color" class="dot-color-input" id="mcd5" value="#9e988f" title="Dot 5">
                   </div>
                 </div>
 
@@ -469,11 +477,19 @@
                 <div class="selector-group">
                   <div class="selector-label">Dot Colors</div>
                   <div class="dot-options">
-                    <button class="dot-btn active" data-style="default"><span style="background:#f5b801"></span><span style="background:#73e491"></span><span style="background:#25a2ff"></span><span style="background:#ff7455"></span><span style="background:#9e988f"></span></button>
+                    <button class="dot-btn" data-style="default"><span style="background:#f5b801"></span><span style="background:#73e491"></span><span style="background:#25a2ff"></span><span style="background:#ff7455"></span><span style="background:#9e988f"></span></button>
                     <button class="dot-btn" data-style="vibrant"><span style="background:#796aff"></span><span style="background:#25a2ff"></span><span style="background:#73e491"></span><span style="background:#ff7455"></span><span style="background:#f5b801"></span></button>
                     <button class="dot-btn" data-style="warm"><span style="background:#ff7455"></span><span style="background:#f5b801"></span><span style="background:#611f2c"></span><span style="background:#9e988f"></span><span style="background:#cac1b4"></span></button>
                     <button class="dot-btn" data-style="cool"><span style="background:#796aff"></span><span style="background:#25a2ff"></span><span style="background:#093a3e"></span><span style="background:#73e491"></span><span style="background:#9e988f"></span></button>
-                    <button class="dot-btn" data-style="none"><span style="background:#ddd"></span><span style="background:#ddd"></span><span style="background:#ddd"></span><span style="background:#ddd"></span><span style="background:#ddd"></span></button>
+                    <button class="dot-btn active" data-style="none"><span style="background:#ddd"></span><span style="background:#ddd"></span><span style="background:#ddd"></span><span style="background:#ddd"></span><span style="background:#ddd"></span></button>
+                    <button class="dot-btn dot-btn-custom" data-style="custom">Custom</button>
+                  </div>
+                  <div id="aiCustomDotPicker" class="custom-dot-picker" style="display:none;">
+                    <input type="color" class="dot-color-input" id="acd1" value="#f5b801" title="Dot 1">
+                    <input type="color" class="dot-color-input" id="acd2" value="#73e491" title="Dot 2">
+                    <input type="color" class="dot-color-input" id="acd3" value="#25a2ff" title="Dot 3">
+                    <input type="color" class="dot-color-input" id="acd4" value="#ff7455" title="Dot 4">
+                    <input type="color" class="dot-color-input" id="acd5" value="#9e988f" title="Dot 5">
                   </div>
                 </div>
 
@@ -593,6 +609,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=33"></script>
+  <script src="app.js?v=34"></script>
 </body>
 </html>
