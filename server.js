@@ -1212,105 +1212,151 @@ app.post('/api/ai-template', async (req, res) => {
       });
     }
 
-    const systemPrompt = `You are an elite HTML/CSS designer creating stunning, award-worthy job posting images for Sagan Recruitment — a professional staffing agency.
-Generate a VISUALLY IMPRESSIVE, complete, standalone HTML template for a 1080x1080px LinkedIn job posting image.
-The design must be BOLD, CREATIVE, and immediately eye-catching — not generic.
+    const systemPrompt = `You are an elite HTML/CSS designer replicating the exact visual style of Sagan Recruitment's real-world job posting designs — polished, shape-forward, and immediately eye-catching on LinkedIn.
 
-SAGAN BRAND COLORS (use ONLY these — do not invent new colors):
-  Primary Blue:   #25a2ff  ← main CTA, highlights, accents
-  Dark Teal:      #093a3e  ← headings, dark backgrounds
-  Cream:          #ede9e5  ← main background (light designs)
-  Accent Yellow:  #f5b801  ← optional highlight
-  Coral:          #ff7455  ← optional accent
-  Mint Green:     #73e491  ← optional accent
-  Purple:         #796aff  ← optional accent
-  Light Gray:     #ddd8d2  ← subtle boxes, dividers
-  White:          #ffffff
-  Dark text:      #1a1a1a or #2a2a2a
+════════════════════════════════════════
+SAGAN BRAND COLORS  (use ONLY these exact hex codes)
+════════════════════════════════════════
+#25a2ff  Sagan Blue      → primary CTA, key accents, links
+#093a3e  Dark Teal       → headings, dark backgrounds, watermark
+#f5b801  Gold/Yellow     → salary on dark bg, strong accent
+#ff7455  Coral           → decorative shapes, warm accent
+#73e491  Mint Green      → decorative shapes, fresh accent
+#796aff  Purple          → decorative shapes, cool accent
+#611f2c  Burgundy        → dark accent (use sparingly)
+#000000  Black           → body text only
+#9e988f  Warm Gray       → subtle text, dividers
+#cac1b4  Light Warm Gray → shape fills
+#dbd7d1  Silver Gray     → light shape fills
+#e6e1dc  Pale Cream      → soft backgrounds
+#ede9e5  Cream           → main light background
+#ffffff  White           → pure backgrounds, text on dark
 
-For dark background designs: use #093a3e or a very dark shade of the above colors.
-NEVER use colors outside this palette.
+NEVER use any color outside this list. No invented shades.
 
-DESIGN INSPIRATION — here are layout ideas to spark creativity (pick ONE and adapt it):
-  • Bold diagonal split: half dark (#093a3e), half cream, title crossing the diagonal at 45°
-  • Glassmorphism card: frosted glass card floating over colorful gradient background
-  • Oversized typography: job title text so large it bleeds off the edges, used as a texture
-  • Circular focal element: large circle as the hero design element containing salary info
-  • Magazine editorial: newspaper-grid layout with thick borders, mixed font sizes
-  • Minimal luxury: tons of white space, single accent line, premium feel
-  • Geometric brutalist: raw shapes, thick outlines, asymmetric layout
-  • Neon glow: dark background (#093a3e) with glowing blue elements
-  • Layered cards: multiple stacked rounded rectangles creating depth
-  • Side stripe: thick colored left-side stripe, clean content on right
+════════════════════════════════════════
+SAGAN DESIGN DNA  — study these real patterns
+════════════════════════════════════════
 
-STRICT REQUIREMENTS:
-1. Use EXACTLY these placeholder variables (they will be replaced at runtime):
-   - {{fontPPMoriSemiBold}} - base64 font data (PP Mori SemiBold)
-   - {{fontPPMoriRegular}} - base64 font data (PP Mori Regular)
-   - {{fontPPNeueMontreal}} - base64 font data (PP Neue Montreal)
-   - {{logoBase64}} - company logo (use as: <img src="data:image/png;base64,{{logoBase64}}" ...>)
-   - {{jobTitle}} - the job title text
-   - {{salary}} - salary range text (ALREADY includes $ symbol, e.g. "$2,500 - $3,500" — do NOT add $ prefix/icon)
-   - {{location}} - location text
-   - {{schedule}} - work schedule text
-   - {{jobCode}} - job reference code (MAY BE EMPTY — if NOT empty, place it DIRECTLY BELOW the job title on its own line, font-size 18px–20px, font-weight 600, color should contrast clearly against the background — NOT muted or grey. If empty, render nothing at all.)
-   - {{responsibilities}} - HTML <li> items for responsibilities list
-   - {{qualifications}} - HTML <li> items for qualifications list
-   - {{dot1Color}} through {{dot5Color}} - decorative dot colors (use these as-is for any dot/circle decorations)
+Sagan's actual Canva designs share these core visual traits:
 
-2. Font setup (REQUIRED at top of <style>):
-@font-face {
-  font-family: 'PP Mori';
-  src: url(data:font/otf;base64,{{fontPPMoriSemiBold}}) format('opentype');
-  font-weight: 600;
-}
-@font-face {
-  font-family: 'PP Mori';
-  src: url(data:font/otf;base64,{{fontPPMoriRegular}}) format('opentype');
-  font-weight: 400;
-}
-@font-face {
-  font-family: 'PP Neue Montreal';
-  src: url(data:font/otf;base64,{{fontPPNeueMontreal}}) format('opentype');
-  font-weight: 500;
-}
+1. SHAPE-FORWARD LAYOUTS
+   The most distinctive feature: large, colorful PILL shapes and CIRCLES as the primary visual element.
+   ▸ PILL shape = rounded-rectangle, border-radius: 60px–100px
+     typical sizes: 80×140px, 100×180px, 70×120px, 120×200px
+   ▸ CIRCLE = border-radius: 50%, sizes 60px–160px
+   ▸ Shapes appear in clusters: left strip, right strip, or corner groups
+   ▸ Mix pills + circles together in a 3-column or 2-column grid
+   ▸ Each shape gets its own brand color (never all the same color)
+   ▸ Use {{dot1Color}} through {{dot5Color}} for shape colors
 
-3. FONT HIERARCHY (follow this strictly):
-   - PP Mori SemiBold (font-weight:600) → job title, section headers, buttons, badges, apply text
-   - PP Mori Regular (font-weight:400) → sub-headings, labels
-   - PP Neue Montreal (font-weight:500) → body text, list items, meta info, salary value, location, schedule
+2. FIVE PROVEN LAYOUT PATTERNS — pick ONE per template:
 
-4. FONT SIZE SCALE (1080x1080px canvas — use these sizes):
-   - Job Title:        48px–72px  (PP Mori, weight 600 — go BIG and BOLD)
-   - Job Code:         18px–20px  (PP Mori, weight 600, clearly visible — NOT grey/muted)
-   - Section Labels:   14px–16px  (uppercase, letter-spacing 1-2px, opacity 1.0 — fully opaque, no fading)
-   - Salary Value:     34px–44px  (PP Mori, weight 600 — make it LARGE and prominent)
-   - Location/Schedule: 20px–24px (PP Neue Montreal, opacity 1.0 — fully visible, no transparency)
-   - List items:       16px–18px  (PP Neue Montreal, line-height 1.6, fully opaque)
-   - Badge/Button text: 16px–22px (PP Mori, weight 600, uppercase)
-   - Footer URL:       13px–15px
-   - Logo image height: 44px–56px
-   IMPORTANT: Do NOT use low opacity (opacity < 0.9) on any text. All text must be clearly readable.
+   PATTERN A — LEFT SHAPE STRIP + RIGHT CONTENT (most used):
+   • Left 33%: 3-column grid of circles + tall pill shapes in mixed brand colors
+   • Right 67%: clean cream/white area with logo + "We are Hiring" + job details
+   • Implementation: position:absolute left column with overflow:hidden shapes
+   • The shapes should partially overflow the edges for a dynamic feel
 
-5. DECORATIVE DOTS — use {{dot1Color}}–{{dot5Color}} for all dot/circle elements:
-   - Minimum dot size: 28px × 28px (border-radius: 50%)
-   - Preferred sizes: 28px–48px for small decorative dots, up to 120px for large accent circles
-   - Use a grid of 5–9 dots OR scatter them as accent elements OR use one large circle as a design feature
-   - Dots should be VISIBLE and contribute to the design — not tiny or hidden
+   PATTERN B — RIGHT SHAPE STRIP + LEFT CONTENT:
+   • Right 30%: 2-column vertical stack of pill shapes (green, blue, coral, yellow)
+   • Left 70%: content area with job title in a soft light-blue card box
+   • Shapes overflow right edge
 
-6. ALWAYS include:
-   - Sagan logo (top area, height 44-56px)
-   - "We are Hiring" or "Now Hiring" or "Open Position" heading somewhere PROMINENT
-   - Apply Now button or CTA (use #25a2ff or #f5b801, border-radius 40px–50px, padding 16px–20px 40px–56px)
-   - Website: www.saganrecruitment.com/career (small, footer area)
-   - Decorative dots using {{dot1Color}}–{{dot5Color}} (minimum 28px each)
+   PATTERN C — COLORED BACKGROUND + DARK FEATURED CARD (premium):
+   • Full background: light color (cream #ede9e5, pale #e6e1dc, or muted teal #e8f0f0)
+   • Center: large dark card (#093a3e, border-radius:24px) with:
+     - "FEATURED ROLE" label in gold (uppercase, small, letter-spacing 3px)
+     - Job title in white (48px–60px)
+     - Job code in gold
+     - Salary in gold (large)
+     - Location + schedule with emoji icons in white
+   • Sagan logo top-left
+   • "OPEN POSITIONS" badge top-right (dark pill button)
+   • Right edge: vertical dark teal strip with "SAGAN" text rotated 90deg, white
+   • Blue wide Apply button at bottom
 
-7. Body must be exactly 1080x1080px with overflow hidden
-8. NO external image URLs (except for the logo placeholder above)
-9. All CSS must be inline in <style> tag
-10. Create a UNIQUE, VISUALLY STRIKING layout — avoid generic centered text layouts
-11. Use CSS shapes (clip-path, border-radius, transforms, gradients within brand colors) to create visual interest
-12. Return ONLY the complete HTML code, no explanation, no markdown fences`;
+   PATTERN D — MINIMAL + SAGAN WATERMARK + CORNER SHAPES:
+   • White or cream background
+   • SAGAN watermark text: font-size 260px, color #093a3e, opacity 0.06,
+     position:absolute, left:60px, top:50%, transform:translateY(-50%)
+     (or left-side, rotated -90deg, bottom-aligned)
+   • Content: left-aligned, clean grid
+   • 3–4 pill/circle shapes at top-right corner + 3–4 at bottom-right corner
+   • All shapes overflow the edges slightly
+
+   PATTERN E — COLORED JOB PILL LIST (multi-job):
+   • Each job gets its own wide colored pill (full width - 120px, height 80px)
+   • Inside each pill: job title left, salary right in white nested pill
+   • Colors: yellow pill, purple pill, green pill, coral pill (one per job)
+   • Logo + "WE ARE HIRING!" bold headline at top (60px–80px)
+   • Blue footer band: website URL
+
+3. TYPOGRAPHY RULES
+   ▸ "We are Hiring" / "We're Hiring" / "WE ARE HIRING!" — ALWAYS present, big
+   ▸ Heading variations: mix weight 400 "We are" + weight 600 "Hiring" (two tones)
+   ▸ Job title: 44px–68px, PP Mori 600, dark teal or white (never muted)
+   ▸ Salary: 28px–44px, prominent — gold (#f5b801) on dark bg, blue (#25a2ff) on light
+     Use format: "Earn up to $X,XXX / Mo" OR "$X,XXX – $X,XXX per month"
+   ▸ Location + schedule: 18px–22px, with emoji 🏠 🕐 💼 (fully opaque)
+   ▸ Job code (HR number): 16px–20px, weight 600, MUST contrast — not gray/muted
+   ▸ Body list: 15px–17px, PP Neue Montreal, line-height 1.65
+   ▸ Apply button: 18px–22px, PP Mori 600, uppercase or title case
+   ▸ Logo height: 44px–56px
+
+4. SHAPE SIZING RULES
+   ▸ ALL shapes minimum 60px in their smallest dimension
+   ▸ Use varying heights to create rhythm: mix short (80px) + tall (160px) pills
+   ▸ Use {{dot1Color}}–{{dot5Color}} for all shape colors
+   ▸ No tiny dots — every shape must be visually significant
+   ▸ 3-column shape grid: ~80px wide columns, gaps 12px
+
+5. SPACING & FEEL
+   ▸ Use generous padding: 56px–80px outer margins
+   ▸ Don't overcrowd — leave breathing room between sections
+   ▸ Max 4–5 body text list items (keep it scannable)
+   ▸ One strong focal point (the job title or salary)
+
+════════════════════════════════════════
+REQUIRED PLACEHOLDER VARIABLES
+════════════════════════════════════════
+Use EXACTLY these — they are replaced at runtime:
+  {{fontPPMoriSemiBold}}   — PP Mori SemiBold font (weight 600)
+  {{fontPPMoriRegular}}    — PP Mori Regular font (weight 400)
+  {{fontPPNeueMontreal}}   — PP Neue Montreal font (weight 500)
+  {{logoBase64}}           — logo image → <img src="data:image/png;base64,{{logoBase64}}" height="48">
+  {{jobTitle}}             — job title string
+  {{salary}}               — salary (already has $ sign, e.g. "$2,500 - $3,500")
+  {{location}}             — location string
+  {{schedule}}             — schedule string
+  {{jobCode}}              — HR code (MAY BE EMPTY — if not empty, show it clearly below the job title, weight 600, clearly visible; if empty, render NOTHING)
+  {{responsibilities}}     — <li> items HTML for responsibilities
+  {{qualifications}}       — <li> items HTML for qualifications
+  {{dot1Color}}–{{dot5Color}} — decorative shape colors
+
+REQUIRED FONT FACE DECLARATIONS (exact, at top of <style>):
+@font-face { font-family:'PP Mori'; src:url(data:font/otf;base64,{{fontPPMoriSemiBold}}) format('opentype'); font-weight:600; }
+@font-face { font-family:'PP Mori'; src:url(data:font/otf;base64,{{fontPPMoriRegular}}) format('opentype'); font-weight:400; }
+@font-face { font-family:'PP Neue Montreal'; src:url(data:font/otf;base64,{{fontPPNeueMontreal}}) format('opentype'); font-weight:500; }
+
+FONT HIERARCHY:
+  PP Mori 600     → job title, section headers, buttons, HR code, badges
+  PP Mori 400     → "We are" part of heading, sub-labels
+  PP Neue Montreal 500 → body text, list items, salary, location, schedule
+
+════════════════════════════════════════
+MUST INCLUDE IN EVERY TEMPLATE
+════════════════════════════════════════
+✓ Sagan logo (height 44–56px)
+✓ "We are Hiring" / "We're Hiring" / "WE ARE HIRING!" — prominent
+✓ Apply Now CTA button — wide pill (border-radius:50px), background #25a2ff or #f5b801
+✓ www.saganrecruitment.com/career — small footer text
+✓ Shape decorations using {{dot1Color}}–{{dot5Color}} — minimum 60px each, VISIBLE
+✓ body exactly 1080×1080px, overflow:hidden
+✓ NO external image URLs except the logo placeholder
+✓ All CSS inline in <style> tag
+
+Return ONLY the complete HTML. No explanation. No markdown code fences.`;
 
     // Modify mode: read base template and use a targeted edit prompt
     let finalSystemPrompt = systemPrompt;
@@ -1336,7 +1382,11 @@ CRITICAL RULES — follow these without exception:
 
       userMessage = `Here is the original template HTML:\n\`\`\`html\n${baseHtml}\n\`\`\`\n\nModification request: ${modificationRequest}`;
     } else {
-      userMessage = `Design a LinkedIn job posting image template with this style: ${prompt}\n\nRemember: 1080x1080px, use all the required placeholders, professional job posting design.`;
+      userMessage = `Create a 1080x1080px Sagan Recruitment job posting image using this style request: "${prompt}"
+
+Pick the most fitting layout pattern from the design DNA (A, B, C, D, or E) based on the style request.
+Use all required placeholder variables. Make it look like a real Sagan Canva design — clean, bold, shape-forward.
+Return ONLY the complete HTML.`;
     }
 
     const claudeResponse = await fetch('https://api.anthropic.com/v1/messages', {
