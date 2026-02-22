@@ -5,6 +5,48 @@ let currentUser = null;
 
 const API_URL = window.location.origin;
 
+// ── Custom confirm modal ──────────────────────────────────
+function showConfirm({ title = 'Are you sure?', msg = 'This action cannot be undone.', okLabel = 'Delete', type = 'danger' } = {}) {
+  return new Promise(resolve => {
+    const overlay   = document.getElementById('confirmOverlay');
+    const iconEl    = document.getElementById('confirmIcon');
+    const titleEl   = document.getElementById('confirmTitle');
+    const msgEl     = document.getElementById('confirmMsg');
+    const okBtn     = document.getElementById('confirmOkBtn');
+    const cancelBtn = document.getElementById('confirmCancelBtn');
+
+    titleEl.textContent = title;
+    msgEl.textContent   = msg;
+    okBtn.textContent   = okLabel;
+    okBtn.className     = `confirm-ok ${type}`;
+    iconEl.className    = `confirm-icon ${type}`;
+
+    // Swap icon for warning type
+    if (type === 'warning') {
+      iconEl.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="#f5b801" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`;
+    } else {
+      iconEl.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>`;
+    }
+
+    overlay.classList.add('open');
+
+    function done(result) {
+      overlay.classList.remove('open');
+      okBtn.removeEventListener('click', onOk);
+      cancelBtn.removeEventListener('click', onCancel);
+      overlay.removeEventListener('click', onBg);
+      resolve(result);
+    }
+    const onOk     = () => done(true);
+    const onCancel = () => done(false);
+    const onBg     = (e) => { if (e.target === overlay) done(false); };
+
+    okBtn.addEventListener('click', onOk);
+    cancelBtn.addEventListener('click', onCancel);
+    overlay.addEventListener('click', onBg);
+  });
+}
+
 async function initSupabase() {
   try {
     const res = await fetch('/api/config');
@@ -765,7 +807,8 @@ function syncTemplateDropdown(templates, aiOutputTypeMap = {}) {
 
 // Delete a saved custom template
 async function deleteCustomTemplate(id) {
-  if (!confirm('Bu template\'i silmek istediğinize emin misiniz?')) return;
+  const ok = await showConfirm({ title: 'Delete Template', msg: 'This template will be permanently deleted. This action cannot be undone.', okLabel: 'Delete', type: 'danger' });
+  if (!ok) return;
   if (supabaseClient && currentUser) {
     try {
       const filePath = `${currentUser.id}/${id}.png`;
@@ -804,8 +847,9 @@ async function previewCustomTemplate(id) {
 }
 
 // Hide template
-function hideTemplate(id) {
-  if (!confirm('Bu template\'i gizlemek istediğinize emin misiniz?')) return;
+async function hideTemplate(id) {
+  const ok = await showConfirm({ title: 'Hide Template', msg: 'This template will be hidden from your gallery. You can restore it anytime using "Restore Hidden".', okLabel: 'Hide', type: 'warning' });
+  if (!ok) return;
   const hiddenTemplates = JSON.parse(localStorage.getItem('hiddenTemplates') || '[]');
   if (!hiddenTemplates.includes(id)) {
     hiddenTemplates.push(id);

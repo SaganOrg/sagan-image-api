@@ -1914,3 +1914,97 @@ select:focus {
   font-size: 13px;
   border: 1px solid #fed7d7;
 }
+
+/* ── Custom Confirm Modal ─────────────────────── */
+.confirm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(9, 58, 62, 0.35);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+.confirm-overlay.open {
+  opacity: 1;
+  pointer-events: all;
+}
+.confirm-box {
+  background: #fff;
+  border-radius: 20px;
+  padding: 36px 32px 28px;
+  width: 360px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 20px 60px rgba(9,58,62,0.18);
+  transform: translateY(12px) scale(0.97);
+  transition: transform 0.22s ease, opacity 0.22s ease;
+  opacity: 0;
+}
+.confirm-overlay.open .confirm-box {
+  transform: translateY(0) scale(1);
+  opacity: 1;
+}
+.confirm-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 4px;
+}
+.confirm-icon.danger { background: #fff1f0; }
+.confirm-icon.warning { background: #fffbea; }
+.confirm-icon svg { width: 24px; height: 24px; }
+.confirm-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: #111;
+  text-align: center;
+}
+.confirm-msg {
+  font-size: 14px;
+  color: #6b7280;
+  text-align: center;
+  line-height: 1.55;
+  margin-bottom: 6px;
+}
+.confirm-actions {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+  margin-top: 4px;
+}
+.confirm-cancel {
+  flex: 1;
+  padding: 11px;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 10px;
+  background: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.confirm-cancel:hover { background: #f3f4f6; border-color: #d1d5db; }
+.confirm-ok {
+  flex: 1;
+  padding: 11px;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.confirm-ok.danger { background: #ef4444; color: #fff; }
+.confirm-ok.warning { background: #f5b801; color: #111; }
+.confirm-ok:hover { opacity: 0.88; }

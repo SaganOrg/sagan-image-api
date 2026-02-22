@@ -575,6 +575,23 @@
     </div>
   </div>
 
-  <script src="app.js?v=32"></script>
+  <!-- Custom Confirm Modal -->
+  <div id="confirmOverlay" class="confirm-overlay">
+    <div class="confirm-box">
+      <div id="confirmIcon" class="confirm-icon danger">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
+        </svg>
+      </div>
+      <div id="confirmTitle" class="confirm-title">Are you sure?</div>
+      <div id="confirmMsg" class="confirm-msg">This action cannot be undone.</div>
+      <div class="confirm-actions">
+        <button id="confirmCancelBtn" class="confirm-cancel">Cancel</button>
+        <button id="confirmOkBtn" class="confirm-ok danger">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js?v=33"></script>
 </body>
 </html>
