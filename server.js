@@ -1212,9 +1212,9 @@ app.post('/api/ai-template', async (req, res) => {
       });
     }
 
-    const systemPrompt = `You are an expert HTML/CSS designer for Sagan Recruitment — a professional staffing agency.
-Generate a complete, standalone HTML template for a 1080x1080px LinkedIn job posting image.
-The design must always feel on-brand, polished, and professional.
+    const systemPrompt = `You are an elite HTML/CSS designer creating stunning, award-worthy job posting images for Sagan Recruitment — a professional staffing agency.
+Generate a VISUALLY IMPRESSIVE, complete, standalone HTML template for a 1080x1080px LinkedIn job posting image.
+The design must be BOLD, CREATIVE, and immediately eye-catching — not generic.
 
 SAGAN BRAND COLORS (use ONLY these — do not invent new colors):
   Primary Blue:   #25a2ff  ← main CTA, highlights, accents
@@ -1230,6 +1230,18 @@ SAGAN BRAND COLORS (use ONLY these — do not invent new colors):
 
 For dark background designs: use #093a3e or a very dark shade of the above colors.
 NEVER use colors outside this palette.
+
+DESIGN INSPIRATION — here are layout ideas to spark creativity (pick ONE and adapt it):
+  • Bold diagonal split: half dark (#093a3e), half cream, title crossing the diagonal at 45°
+  • Glassmorphism card: frosted glass card floating over colorful gradient background
+  • Oversized typography: job title text so large it bleeds off the edges, used as a texture
+  • Circular focal element: large circle as the hero design element containing salary info
+  • Magazine editorial: newspaper-grid layout with thick borders, mixed font sizes
+  • Minimal luxury: tons of white space, single accent line, premium feel
+  • Geometric brutalist: raw shapes, thick outlines, asymmetric layout
+  • Neon glow: dark background (#093a3e) with glowing blue elements
+  • Layered cards: multiple stacked rounded rectangles creating depth
+  • Side stripe: thick colored left-side stripe, clean content on right
 
 STRICT REQUIREMENTS:
 1. Use EXACTLY these placeholder variables (they will be replaced at runtime):
@@ -1269,29 +1281,36 @@ STRICT REQUIREMENTS:
    - PP Neue Montreal (font-weight:500) → body text, list items, meta info, salary value, location, schedule
 
 4. FONT SIZE SCALE (1080x1080px canvas — use these sizes):
-   - Job Title:        48px–60px  (PP Mori, weight 600)
+   - Job Title:        48px–72px  (PP Mori, weight 600 — go BIG and BOLD)
    - Job Code:         18px–20px  (PP Mori, weight 600, clearly visible — NOT grey/muted)
    - Section Labels:   14px–16px  (uppercase, letter-spacing 1-2px, opacity 1.0 — fully opaque, no fading)
-   - Salary Value:     32px–40px  (PP Mori, weight 600 — make it LARGE and prominent)
+   - Salary Value:     34px–44px  (PP Mori, weight 600 — make it LARGE and prominent)
    - Location/Schedule: 20px–24px (PP Neue Montreal, opacity 1.0 — fully visible, no transparency)
    - List items:       16px–18px  (PP Neue Montreal, line-height 1.6, fully opaque)
-   - Badge/Button text: 16px–20px (PP Mori, weight 600, uppercase)
+   - Badge/Button text: 16px–22px (PP Mori, weight 600, uppercase)
    - Footer URL:       13px–15px
-   - Logo image height: 40px–52px
+   - Logo image height: 44px–56px
    IMPORTANT: Do NOT use low opacity (opacity < 0.9) on any text. All text must be clearly readable.
 
-5. ALWAYS include:
-   - Sagan logo (top area, height 44-52px)
-   - "We are Hiring" or "Now Hiring" heading somewhere prominent
-   - Apply Now button or CTA (use #25a2ff or #f5b801)
-   - Website: www.saganrecruitment.com/career (small, footer area)
-   - Decorative dots using {{dot1Color}}–{{dot5Color}}
+5. DECORATIVE DOTS — use {{dot1Color}}–{{dot5Color}} for all dot/circle elements:
+   - Minimum dot size: 28px × 28px (border-radius: 50%)
+   - Preferred sizes: 28px–48px for small decorative dots, up to 120px for large accent circles
+   - Use a grid of 5–9 dots OR scatter them as accent elements OR use one large circle as a design feature
+   - Dots should be VISIBLE and contribute to the design — not tiny or hidden
 
-6. Body must be exactly 1080x1080px with overflow hidden
-7. NO external image URLs (except for the logo placeholder above)
-8. All CSS must be inline in <style> tag
-9. Generate a unique layout matching the user's style request, but always within Sagan brand
-10. Return ONLY the HTML code, no explanation`;
+6. ALWAYS include:
+   - Sagan logo (top area, height 44-56px)
+   - "We are Hiring" or "Now Hiring" or "Open Position" heading somewhere PROMINENT
+   - Apply Now button or CTA (use #25a2ff or #f5b801, border-radius 40px–50px, padding 16px–20px 40px–56px)
+   - Website: www.saganrecruitment.com/career (small, footer area)
+   - Decorative dots using {{dot1Color}}–{{dot5Color}} (minimum 28px each)
+
+7. Body must be exactly 1080x1080px with overflow hidden
+8. NO external image URLs (except for the logo placeholder above)
+9. All CSS must be inline in <style> tag
+10. Create a UNIQUE, VISUALLY STRIKING layout — avoid generic centered text layouts
+11. Use CSS shapes (clip-path, border-radius, transforms, gradients within brand colors) to create visual interest
+12. Return ONLY the complete HTML code, no explanation, no markdown fences`;
 
     // Modify mode: read base template and use a targeted edit prompt
     let finalSystemPrompt = systemPrompt;
@@ -1329,7 +1348,7 @@ CRITICAL RULES — follow these without exception:
       },
       body: JSON.stringify({
         model: 'claude-opus-4-6',
-        max_tokens: 4096,
+        max_tokens: 8192,
         system: finalSystemPrompt,
         messages: [{ role: 'user', content: userMessage }]
       })
