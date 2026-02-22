@@ -102,39 +102,36 @@ function parseJobDescription(description) {
     }
   }
 
-  // Extract Location
-  const locationMatch = description.match(/Location[:\s]*([^\n]+)/i);
+  // Extract Location — only accept clean values
+  const locationMatch = description.match(/^Location[:\s]*([^\n]+)/im);
   if (locationMatch) {
-    let loc = locationMatch[1].trim();
-    // Clean up common patterns
+    let loc = locationMatch[1].trim().split(/[,;]/)[0].trim();
     if (loc.toLowerCase().includes('remote')) {
       result.location = 'Remote';
-    } else {
-      result.location = loc.split('-')[0].trim(); // Take first part before dash
+    } else if (loc.length > 0 && loc.length <= 40 && /^[a-zA-Z0-9\s,.\-\/]+$/.test(loc)) {
+      result.location = loc;
     }
   }
 
-  // Extract Schedule
+  // Extract Schedule — only accept clean values
   const schedulePatterns = [
-    /Work\s*Schedule[:\s]*([^\n]+)/i,
-    /Schedule[:\s]*([^\n]+)/i,
-    /Hours[:\s]*([^\n]+)/i
+    /^Work\s*Schedule[:\s]*([^\n]+)/im,
+    /^Schedule[:\s]*([^\n]+)/im
   ];
 
   for (const pattern of schedulePatterns) {
     const match = description.match(pattern);
     if (match) {
       let sched = match[1].trim();
-      // Simplify schedule
-      if (sched.toLowerCase().includes('monday') && sched.toLowerCase().includes('friday')) {
+      if (sched.toLowerCase().includes('monday') || sched.toLowerCase().includes('m-f') || sched.toLowerCase().includes('mon')) {
         const timeMatch = sched.match(/(\d{1,2}:\d{2}\s*(?:AM|PM)?)\s*[-–]\s*(\d{1,2}:\d{2}\s*(?:AM|PM)?)/i);
         if (timeMatch) {
-          result.schedule = `M-F, ${timeMatch[1]} - ${timeMatch[2]}`;
+          result.schedule = `M-F, ${timeMatch[1]}-${timeMatch[2]} PST`;
         } else {
           result.schedule = 'Full-time, M-F';
         }
-      } else {
-        result.schedule = sched.substring(0, 30); // Limit length
+      } else if (sched.length > 0 && sched.length <= 40 && /^[a-zA-Z0-9\s,.\-\/]+$/.test(sched)) {
+        result.schedule = sched;
       }
       break;
     }
