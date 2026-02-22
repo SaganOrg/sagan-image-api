@@ -1129,8 +1129,8 @@ const OUTPUT_TYPE_PROMPTS = {
 
 const DECORATION_PROMPTS = {
   'none':             '',
-  'pill-grid-left':   'LEFT PILL SHAPE GRID (REQUIRED — this is the main decoration): Use PATTERN A from the design DNA. Divide the poster: left 33% is a shape grid, right 67% is clean content. The shape grid on the left must contain a 3-column arrangement of circles AND tall pill shapes (border-radius:60px–100px). Mix sizes: circles ~80–120px diameter, pills ~80px wide × 140–180px tall. Use exactly these colors: {{dot1Color}}, {{dot2Color}}, {{dot3Color}}, {{dot4Color}}, {{dot5Color}} cycling through the shapes. Position them with absolute positioning, let some overflow the left edge. The content area (right 67%) must be clean cream or white.',
-  'pill-grid-right':  'RIGHT PILL SHAPE GRID (REQUIRED — this is the main decoration): Use PATTERN B from the design DNA. Divide the poster: right 30% is a shape grid, left 70% is clean content. The shape grid on the right: 2-column vertical stack of tall pill shapes (border-radius:80px), each ~100px wide × 160–200px tall, with small gap. Colors: {{dot1Color}}, {{dot2Color}}, {{dot3Color}}, {{dot4Color}}, {{dot5Color}}. Let pills overflow the right edge. Content area on the left must be clean.',
+  'pill-grid-left':   'LEFT PILL SHAPE GRID (REQUIRED — this is the main decoration): Use PATTERN A from the design DNA. Divide the poster: left 33% is a shape grid, right 67% is clean content. The shape grid on the left must contain a 3-column arrangement of circles AND tall pill shapes (border-radius:60px–100px). Mix sizes: circles ~80–120px diameter, pills ~80px wide × 140–180px tall. Use these Sagan brand colors for the shapes: #73e491, #25a2ff, #ff7455, #f5b801, #796aff, #9e988f — vary the colors per shape. Position them with absolute positioning, let some overflow the left edge. The content area (right 67%) must be clean cream or white.',
+  'pill-grid-right':  'RIGHT PILL SHAPE GRID (REQUIRED — this is the main decoration): Use PATTERN B from the design DNA. Divide the poster: right 30% is a shape grid, left 70% is clean content. The shape grid on the right: 2-column vertical stack of tall pill shapes (border-radius:80px), each ~100px wide × 160–200px tall, with small gap. Use these Sagan brand colors: #73e491, #25a2ff, #ff7455, #f5b801, #796aff, #cac1b4 — vary per shape. Let pills overflow the right edge. Content area on the left must be clean.',
   'side-blocks':      'RIGHT SIDE DECORATION (important): Absolutely position 4–5 tall rounded pill shapes (border-radius: 40px) stacked vertically on the right edge, each about 75px wide and 190px tall. Use Sagan colors: #73e491, #25a2ff, #ff7455, #f5b801, #796aff. Overlap the right edge slightly (right: -20px).',
   'corner-circles':   'CORNER DECORATION (important): Place 3–4 large colored circles (120–160px diameter) in the top-right corner, partially overlapping each other and the edge. Sagan colors: #73e491, #f5b801, #25a2ff, #ff7455. Also 2–3 smaller circles (60–80px) in the bottom-right corner. Use absolute positioning.',
   'watermark':        'BACKGROUND WATERMARK (important): Place "SAGAN" as a very large (300–400px font-size) watermark text behind all content. Very low opacity (0.05–0.08) version of #093a3e. Rotate slightly (-15deg) or place vertically along one side.'
@@ -1140,13 +1140,14 @@ function buildAIPrompt() {
   const extraNote = document.getElementById('aiTemplatePrompt').value.trim();
   const decorationPrompt = DECORATION_PROMPTS[aiSelections.decoration];
 
-  // Dot colors — send exact hex values so Claude uses the right colors
+  // Dot colors = small round dots in the FOOTER area (5 dots in a row, like sagan-standard)
+  // These are NOT for big decorative shapes — decorations use their own Sagan brand colors
   const dotColors = aiSelections.dotStyle === 'custom'
     ? getCustomDotColors('acd')
-    : (DOT_COLOR_MAP[aiSelections.dotStyle] || DOT_COLOR_MAP.default);
+    : (DOT_COLOR_MAP[aiSelections.dotStyle] || []);
   const dotPrompt = dotColors.length > 0
-    ? `DECORATIVE DOTS (REQUIRED): use these exact colors for {{dot1Color}} through {{dot5Color}} and any dot/circle decorations: ${dotColors.join(', ')}.`
-    : 'No decorative dots.';
+    ? `FOOTER DOTS: In the footer area, include a row of 5 small circular dots (18px–24px diameter, border-radius:50%) using these exact colors in order: ${dotColors.join(', ')}. Use {{dot1Color}}–{{dot5Color}} placeholders for these dot colors. These are small decorative accent dots only — do NOT use these colors for large shapes or blocks.`
+    : 'No footer dots (dotStyle is none — do not render any {{dot1Color}}–{{dot5Color}} elements).';
 
   // Logo variant hint
   const logoPrompt = `Logo: always use the {{logoBase64}} placeholder for the Sagan logo image.`;
