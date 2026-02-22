@@ -765,6 +765,7 @@ function syncTemplateDropdown(templates, aiOutputTypeMap = {}) {
 
 // Delete a saved custom template
 async function deleteCustomTemplate(id) {
+  if (!confirm('Bu template\'i silmek istediğinize emin misiniz?')) return;
   if (supabaseClient && currentUser) {
     try {
       const filePath = `${currentUser.id}/${id}.png`;
