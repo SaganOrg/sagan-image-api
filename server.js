@@ -465,6 +465,23 @@ app.post('/generate-carousel', async (req, res) => {
 });
 
 // Template preview endpoint
+// In-memory preview cache
+const previewCache = {};
+// Semaphore: max 2 concurrent Playwright preview renders
+let previewRenderCount = 0;
+const MAX_PREVIEW_RENDERS = 2;
+const previewQueue = [];
+function acquireRenderSlot() {
+  return new Promise(resolve => {
+    if (previewRenderCount < MAX_PREVIEW_RENDERS) { previewRenderCount++; resolve(); }
+    else previewQueue.push(resolve);
+  });
+}
+function releaseRenderSlot() {
+  if (previewQueue.length > 0) { const next = previewQueue.shift(); next(); }
+  else previewRenderCount--;
+}
+
 app.get('/api/template-preview/:templateId', async (req, res) => {
   let browser = null;
 
@@ -472,6 +489,14 @@ app.get('/api/template-preview/:templateId', async (req, res) => {
     const { templateId } = req.params;
     const dotStyleParam = req.query.dotStyle || 'default';
     const logoStyleParam = req.query.logoStyle || 'dark';
+
+    // Serve from cache if available
+    const cacheKey = `${templateId}__${dotStyleParam}__${logoStyleParam}`;
+    if (previewCache[cacheKey]) {
+      res.set('Content-Type', 'image/png');
+      res.set('Cache-Control', 'public, max-age=86400');
+      return res.send(previewCache[cacheKey]);
+    }
 
     const templatePath = path.join(__dirname, 'templates', `${templateId}.html`);
 
@@ -531,18 +556,27 @@ app.get('/api/template-preview/:templateId', async (req, res) => {
     html = html.replace(/\{\{qualificationsList\}\}/g, '<li>Experience required</li>');
     html = html.replace(/\{\{jobItems\}\}/g, '');
 
-    browser = await chromium.launch({ headless: true });
-    const page = await browser.newPage();
-    await page.setViewportSize({ width: 1080, height: 1080 });
-    await page.setContent(html, { waitUntil: 'load' });
-    await page.waitForTimeout(500);
+    await acquireRenderSlot();
+    try {
+      browser = await chromium.launch({ headless: true });
+      const page = await browser.newPage();
+      await page.setViewportSize({ width: 1080, height: 1080 });
+      await page.setContent(html, { waitUntil: 'load' });
+      await page.waitForTimeout(500);
 
-    const imageBuffer = await page.screenshot({ type: 'png' });
-    await browser.close();
+      const imageBuffer = await page.screenshot({ type: 'png' });
+      await browser.close();
+      browser = null;
 
-    res.set('Content-Type', 'image/png');
-    res.set('Cache-Control', 'public, max-age=3600');
-    res.send(imageBuffer);
+      // Store in cache
+      previewCache[cacheKey] = imageBuffer;
+
+      res.set('Content-Type', 'image/png');
+      res.set('Cache-Control', 'public, max-age=86400');
+      res.send(imageBuffer);
+    } finally {
+      releaseRenderSlot();
+    }
 
   } catch (error) {
     console.error('Preview error:', error.message);
