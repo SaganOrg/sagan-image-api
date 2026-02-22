@@ -1382,10 +1382,25 @@ CRITICAL RULES — follow these without exception:
 
       userMessage = `Here is the original template HTML:\n\`\`\`html\n${baseHtml}\n\`\`\`\n\nModification request: ${modificationRequest}`;
     } else {
+      // Auto-detect best layout pattern from keywords in prompt
+      const p = (prompt || '').toLowerCase();
+      let patternHint = '';
+      if (/pill|shape.?grid|colorful.?shape|shape.?strip|circle.?left|left.?shape|sol.?taraf|renkli.?sekil|left.?side.?shape/.test(p)) {
+        patternHint = 'Use PATTERN A (Left Shape Strip): 3-column pill+circle grid on left 33%, clean content on right.';
+      } else if (/right.?shape|right.?strip|sag.?taraf/.test(p)) {
+        patternHint = 'Use PATTERN B (Right Shape Strip): 2-column pill grid on right 30%, content on left.';
+      } else if (/dark.?card|dark.?bg|featured|premium|dark.?teal|koyu|dark.?background/.test(p)) {
+        patternHint = 'Use PATTERN C (Colored Background + Dark Featured Card): light bg, big centered dark teal card with gold salary.';
+      } else if (/minimal|clean|simple|watermark|sagan.?text|sade|airy/.test(p)) {
+        patternHint = 'Use PATTERN D (Minimal + SAGAN Watermark): clean bg, huge low-opacity SAGAN background text, corner shape clusters.';
+      } else if (/multi.?job|job.?list|multiple.?job|pill.?list|bircok|colored.?pill/.test(p)) {
+        patternHint = 'Use PATTERN E (Colored Job Pill List): each job in its own wide colored pill stacked vertically.';
+      }
+
       userMessage = `Create a 1080x1080px Sagan Recruitment job posting image using this style request: "${prompt}"
 
-Pick the most fitting layout pattern from the design DNA (A, B, C, D, or E) based on the style request.
-Use all required placeholder variables. Make it look like a real Sagan Canva design — clean, bold, shape-forward.
+${patternHint || 'Pick the most fitting layout pattern (A, B, C, D, or E) from the design DNA.'}
+Use all required placeholder variables. Make it look exactly like a real Sagan Canva design — clean, bold, shape-forward.
 Return ONLY the complete HTML.`;
     }
 

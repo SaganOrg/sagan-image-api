@@ -1103,11 +1103,12 @@ const OUTPUT_TYPE_PROMPTS = {
 };
 
 const DECORATION_PROMPTS = {
-  'none':           '',
-  'side-blocks':    'RIGHT SIDE DECORATION (important): Absolutely position 4–5 tall rounded pill shapes (border-radius: 40px) stacked vertically on the right edge of the poster, each about 75px wide and 190px tall. Use these Sagan colors in order: #73e491, #25a2ff, #ff7455, #f5b801, #796aff. Let them overlap the right edge slightly (right: -20px). This is a signature Sagan visual element — make it prominent.',
-  'corner-circles': 'CORNER DECORATION (important): Place 3–4 large colored circles (120–160px diameter) in the top-right corner, partially overlapping each other and the poster edge. Use Sagan brand colors: #73e491, #f5b801, #25a2ff, #ff7455. Also place 2–3 smaller circles (60–80px) in the bottom-right corner. Use absolute positioning.',
-  'color-bar':      'BOTTOM BAR DECORATION (important): Add a full-width solid colored bar at the very bottom of the poster, about 90px tall. Use Sagan blue (#25a2ff) or yellow (#f5b801). Place the website URL and "Apply Now →" button inside this bar on a single row.',
-  'watermark':      'BACKGROUND WATERMARK (important): Place the word "SAGAN" as a very large (300–400px font-size) watermark text in the background behind all content. Use a very low opacity (0.05–0.08) version of the primary color. Rotate it slightly (-15deg) or place it vertically along one side.'
+  'none':             '',
+  'pill-grid-left':   'LEFT PILL SHAPE GRID (REQUIRED — this is the main decoration): Use PATTERN A from the design DNA. Divide the poster: left 33% is a shape grid, right 67% is clean content. The shape grid on the left must contain a 3-column arrangement of circles AND tall pill shapes (border-radius:60px–100px). Mix sizes: circles ~80–120px diameter, pills ~80px wide × 140–180px tall. Use exactly these colors: {{dot1Color}}, {{dot2Color}}, {{dot3Color}}, {{dot4Color}}, {{dot5Color}} cycling through the shapes. Position them with absolute positioning, let some overflow the left edge. The content area (right 67%) must be clean cream or white.',
+  'pill-grid-right':  'RIGHT PILL SHAPE GRID (REQUIRED — this is the main decoration): Use PATTERN B from the design DNA. Divide the poster: right 30% is a shape grid, left 70% is clean content. The shape grid on the right: 2-column vertical stack of tall pill shapes (border-radius:80px), each ~100px wide × 160–200px tall, with small gap. Colors: {{dot1Color}}, {{dot2Color}}, {{dot3Color}}, {{dot4Color}}, {{dot5Color}}. Let pills overflow the right edge. Content area on the left must be clean.',
+  'side-blocks':      'RIGHT SIDE DECORATION (important): Absolutely position 4–5 tall rounded pill shapes (border-radius: 40px) stacked vertically on the right edge, each about 75px wide and 190px tall. Use Sagan colors: #73e491, #25a2ff, #ff7455, #f5b801, #796aff. Overlap the right edge slightly (right: -20px).',
+  'corner-circles':   'CORNER DECORATION (important): Place 3–4 large colored circles (120–160px diameter) in the top-right corner, partially overlapping each other and the edge. Sagan colors: #73e491, #f5b801, #25a2ff, #ff7455. Also 2–3 smaller circles (60–80px) in the bottom-right corner. Use absolute positioning.',
+  'watermark':        'BACKGROUND WATERMARK (important): Place "SAGAN" as a very large (300–400px font-size) watermark text behind all content. Very low opacity (0.05–0.08) version of #093a3e. Rotate slightly (-15deg) or place vertically along one side.'
 };
 
 function buildAIPrompt() {
