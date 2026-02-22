@@ -1509,6 +1509,8 @@ app.post('/generate', async (req, res) => {
       html = html.replace(/\{\{location\}\}/g, location);
       html = html.replace(/\{\{schedule\}\}/g, schedule);
       html = html.replace(/\{\{jobCode\}\}/g, jobCode);
+      const jobCodeSpan = jobCode ? `<span style="font-weight:400;font-size:36px;"> (${jobCode})</span>` : '';
+      html = html.replace(/\{\{jobCode_span\}\}/g, jobCodeSpan);
 
       // Responsibilities
       const respHTML = responsibilities.length > 0
