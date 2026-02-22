@@ -805,6 +805,7 @@ async function previewCustomTemplate(id) {
 
 // Hide template
 function hideTemplate(id) {
+  if (!confirm('Bu template\'i gizlemek istediğinize emin misiniz?')) return;
   const hiddenTemplates = JSON.parse(localStorage.getItem('hiddenTemplates') || '[]');
   if (!hiddenTemplates.includes(id)) {
     hiddenTemplates.push(id);
