@@ -1194,6 +1194,22 @@ app.get('/api/templates', (req, res) => {
   }
 });
 
+// Delete a server-side template file
+app.delete('/api/template/:id', (req, res) => {
+  try {
+    const id = req.params.id.replace(/[^a-z0-9-]/gi, '');
+    const filePath = path.join(__dirname, 'templates', `${id}.html`);
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ error: 'Template not found' });
+    }
+    fs.unlinkSync(filePath);
+    console.log(`Template deleted: ${id}.html`);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // AI Template generation using Claude API
 app.post('/api/ai-template', async (req, res) => {
   try {

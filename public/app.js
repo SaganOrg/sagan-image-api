@@ -648,7 +648,6 @@ function switchTemplateTab(tab) {
 }
 
 async function loadTemplates() {
-  const hiddenTemplates = JSON.parse(localStorage.getItem('hiddenTemplates') || '[]');
   // Load saved templates from Supabase or localStorage
   let customTemplates = [];
   if (supabaseClient && currentUser) {
@@ -700,8 +699,7 @@ async function loadTemplates() {
   // Sync template dropdowns with server templates (picks up AI-generated ones)
   syncTemplateDropdown(serverTemplates, aiOutputTypeMap);
 
-  // Filter hidden
-  const visibleTemplates = serverTemplates.filter(t => !hiddenTemplates.includes(t.id));
+  const visibleTemplates = serverTemplates;
 
   // Categorize: carousel = known carousel IDs + multi-job IDs + AI carousel types
   const isCarousel = (t) => {
@@ -746,7 +744,6 @@ async function loadTemplates() {
         </svg>
         <p>No ${templateTab} templates found.</p>
         ${templateTab === 'carousel' ? '<p style="font-size:13px;margin-top:8px;">Generate carousel templates in the AI Template tab.</p>' : ''}
-        <button class="btn-secondary" onclick="resetTemplates()" style="margin-top:12px;">Restore Hidden</button>
       </div>
     `;
   } else {
@@ -755,7 +752,7 @@ async function loadTemplates() {
       const safeName = t.name.replace(/'/g, "\\'");
       return `
         <div class="template-card">
-          <button class="template-delete" onclick="event.stopPropagation(); hideTemplate('${t.id}')" title="Hide template">×</button>
+          <button class="template-delete" onclick="event.stopPropagation(); deleteServerTemplate('${t.id}')" title="Delete template">×</button>
           <div class="template-preview" onclick="showTemplatePreview('${t.id}', '${safeName}')">
             <img src="${API_URL}/api/template-preview/${t.id}"
                  alt="${t.name}"
@@ -846,24 +843,22 @@ async function previewCustomTemplate(id) {
   showTemplatePreview(id, t.name, t.imageBase64, t.template || id);
 }
 
-// Hide template
-async function hideTemplate(id) {
-  const ok = await showConfirm({ title: 'Hide Template', msg: 'This template will be hidden from your gallery. You can restore it anytime using "Restore Hidden".', okLabel: 'Hide', type: 'warning' });
+// Delete a server-side template (AI-generated or built-in)
+async function deleteServerTemplate(id) {
+  const ok = await showConfirm({ title: 'Delete Template', msg: 'This template will be permanently deleted from the server. This cannot be undone.', okLabel: 'Delete', type: 'danger' });
   if (!ok) return;
-  const hiddenTemplates = JSON.parse(localStorage.getItem('hiddenTemplates') || '[]');
-  if (!hiddenTemplates.includes(id)) {
-    hiddenTemplates.push(id);
-    localStorage.setItem('hiddenTemplates', JSON.stringify(hiddenTemplates));
+  try {
+    const res = await fetch(`${API_URL}/api/template/${id}`, { method: 'DELETE' });
+    if (res.ok) {
+      loadTemplates();
+      showToast('Template deleted');
+    } else {
+      const err = await res.json();
+      showToast(err.error || 'Delete failed', 'error');
+    }
+  } catch (e) {
+    showToast('Delete failed', 'error');
   }
-  loadTemplates();
-  showToast('Template hidden');
-}
-
-// Reset all templates
-function resetTemplates() {
-  localStorage.removeItem('hiddenTemplates');
-  loadTemplates();
-  showToast('All templates restored');
 }
 
 function selectTemplate(id) {
@@ -1777,8 +1772,7 @@ window.downloadImage = downloadImage;
 window.downloadAll = downloadAll;
 window.closeModal = closeModal;
 window.loadJobs = loadJobs;
-window.hideTemplate = hideTemplate;
-window.resetTemplates = resetTemplates;
+window.deleteServerTemplate = deleteServerTemplate;
 window.filterJobs = filterJobs;
 window.clearAllSelections = clearAllSelections;
 window.saveToTemplates = saveToTemplates;
