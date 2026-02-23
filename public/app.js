@@ -950,6 +950,11 @@ function modifyWithAI() {
   // Capture before closing (closeTemplatePreview clears these)
   _modifyTemplateId = templatePreviewId;
   _modifyTemplateName = templatePreviewTitle;
+
+  // Grab the current preview image src before closing the modal
+  const previewImgEl = document.getElementById('templatePreviewImg');
+  const currentImgSrc = previewImgEl ? previewImgEl.src : null;
+
   closeTemplatePreview();
 
   // Navigate to AI Template tab
@@ -961,6 +966,18 @@ function modifyWithAI() {
 
   // Activate modification mode UI
   showModifyMode();
+
+  // Show the selected template as the starting preview so user knows which one they're modifying
+  if (currentImgSrc) {
+    const previewWrap = document.getElementById('aiTemplatePreviewWrap');
+    previewWrap.innerHTML = `
+      <div style="display:flex;flex-direction:column;align-items:center;gap:10px;padding:12px 0;">
+        <div style="font-size:12px;font-weight:600;color:#9e988f;letter-spacing:0.08em;text-transform:uppercase;">Current Template</div>
+        <img src="${currentImgSrc}" style="width:100%;border-radius:12px;display:block;" alt="Current template">
+        <div style="font-size:12px;color:#b0b8c4;text-align:center;">Make your changes below, then click Generate.</div>
+      </div>`;
+    document.getElementById('aiTemplatePreviewActions').style.display = 'none';
+  }
 }
 
 function showModifyMode() {
