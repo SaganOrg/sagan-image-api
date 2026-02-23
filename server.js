@@ -1310,21 +1310,27 @@ DESIGN THINKING PRINCIPLES
 6. ORIGINALITY IMPERATIVE — before finalizing, ask: "Have I seen this exact composition before?" If yes, change something significant: flip the layout, change background, try a different shape placement strategy, vary the type scale.
 
 ════════════════════════════════════════
-REQUIRED PLACEHOLDER VARIABLES
+REQUIRED PLACEHOLDER VARIABLES — MANDATORY, NO EXCEPTIONS
 ════════════════════════════════════════
-Use EXACTLY these — replaced at runtime:
-  {{fontPPMoriSemiBold}}   → PP Mori weight 600
-  {{fontPPMoriRegular}}    → PP Mori weight 400
-  {{fontPPNeueMontreal}}   → PP Neue Montreal weight 500
-  {{logoBase64}}           → <img src="data:image/png;base64,{{logoBase64}}" height="48">
-  {{jobTitle}}             → job title text
-  {{salary}}               → salary (e.g. "$2,500 - $3,500")
-  {{location}}             → location text
-  {{schedule}}             → schedule text
-  {{jobCode}}              → HR code — show clearly if not empty (PP Mori 600, visible color); if empty render NOTHING
-  {{responsibilities}}     → <li> items HTML
-  {{qualifications}}       → <li> items HTML
-  {{dot1Color}}–{{dot5Color}} → decorative shape fill colors
+These MUST appear as LITERAL STRINGS in your HTML output. The server replaces them with real job data at runtime.
+⚠ NEVER hardcode text where a placeholder belongs. The template will be REJECTED if any placeholder is missing.
+⚠ Do NOT write "Lead campaigns" or "5+ years experience" — write {{responsibilities}} and {{qualifications}} instead.
+
+  {{fontPPMoriSemiBold}}   → in @font-face src
+  {{fontPPMoriRegular}}    → in @font-face src
+  {{fontPPNeueMontreal}}   → in @font-face src
+  {{logoBase64}}           → MUST be: <img src="data:image/png;base64,{{logoBase64}}" height="48" alt="Sagan">
+  {{jobTitle}}             → the literal string {{jobTitle}} inside your title element
+  {{salary}}               → the literal string {{salary}} inside your salary element
+  {{location}}             → location text placeholder
+  {{schedule}}             → schedule text placeholder
+  {{jobCode}}              → HR code (may be empty — always include, server handles empty case)
+  {{responsibilities}}     → MUST be inside a <ul>: <ul class="...">{{responsibilities}}</ul>
+  {{qualifications}}       → MUST be inside a <ul>: <ul class="...">{{qualifications}}</ul>
+  {{dot1Color}}–{{dot5Color}} → CSS color values for decorative shapes
+
+CORRECT ✓   <ul class="list">{{responsibilities}}</ul>
+WRONG   ✗   <ul><li>Lead campaigns</li><li>Manage team</li></ul>
 
 REQUIRED FONT FACE DECLARATIONS at top of <style>:
 @font-face { font-family:'PP Mori'; src:url(data:font/otf;base64,{{fontPPMoriSemiBold}}) format('opentype'); font-weight:600; }
@@ -1452,6 +1458,20 @@ Use all required placeholder variables. Return ONLY the complete HTML.`;
     generatedHtml = generatedHtml.trim();
 
     // Save the generated template to disk
+    // Validate required placeholders are present in generated HTML
+    const REQUIRED_PLACEHOLDERS = [
+      '{{jobTitle}}', '{{salary}}', '{{location}}', '{{schedule}}',
+      '{{responsibilities}}', '{{qualifications}}', '{{logoBase64}}'
+    ];
+    const missingPlaceholders = REQUIRED_PLACEHOLDERS.filter(p => !generatedHtml.includes(p));
+    if (missingPlaceholders.length > 0) {
+      console.warn(`AI template missing placeholders: ${missingPlaceholders.join(', ')}`);
+      return res.status(422).json({
+        error: `The AI forgot to include required placeholders: ${missingPlaceholders.join(', ')}. Please try generating again.`,
+        missingPlaceholders
+      });
+    }
+
     const safeTemplateName = templateName.replace(/[^a-z0-9-]/gi, '-').toLowerCase() || 'ai-custom';
     const savePath = path.join(__dirname, 'templates', `${safeTemplateName}.html`);
     fs.writeFileSync(savePath, generatedHtml, 'utf8');

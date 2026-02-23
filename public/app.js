@@ -1503,7 +1503,6 @@ async function generateAITemplate() {
     if (!response.ok) {
       const err = await response.json();
       // If original template was lost after server restart, exit modification mode
-      // and explain what happened so user can generate fresh
       if (response.status === 404 && isModify) {
         cancelModifyMode();
         previewWrap.innerHTML = `<div style="padding:40px;text-align:center;color:#ef4444;">
@@ -1514,6 +1513,18 @@ async function generateAITemplate() {
         showToast('Original template is gone — generate fresh', 'error');
         btn.disabled = false;
         btn.textContent = '✨ Generate with AI';
+        return;
+      }
+      // If AI forgot required placeholders, show a clear message and let user retry
+      if (response.status === 422) {
+        previewWrap.innerHTML = `<div style="padding:40px;text-align:center;color:#f59e0b;">
+          <strong>⚠ AI missed required fields</strong><br><br>
+          The generated template was missing: <code style="font-size:12px;">${(err.missingPlaceholders||[]).join(', ')}</code><br><br>
+          Click Generate again — this usually resolves on retry.
+        </div>`;
+        showToast('AI missed placeholders — try again', 'warning');
+        btn.disabled = false;
+        btn.textContent = isModify ? 'Apply Changes' : '✨ Generate with AI';
         return;
       }
       throw new Error(err.message || err.error || 'Generation failed');
