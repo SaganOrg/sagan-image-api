@@ -264,16 +264,36 @@ app.get('/api/airtable/jobs', async (req, res) => {
     // Reverse to show newest first (Airtable returns oldest first by default)
     const records = data.records.reverse();
 
+    // Clean Request Name format: "[Replacement] Job Title - Company - Person [HR12345]"
+    // → returns just "Job Title"
+    function cleanTitle(raw) {
+      if (!raw) return '';
+      let t = raw.trim();
+      // Remove leading bracket tags: [Replacement], [New], [Backfill], etc.
+      t = t.replace(/^\s*\[[^\]]+\]\s*/g, '');
+      // Remove trailing HR code: [HR12345] or (HR12345)
+      t = t.replace(/\s*[\[(]HR\d+[\])]\s*$/i, '');
+      // Remove " - Company - Person" suffix: take everything before the first " - "
+      const dashIdx = t.indexOf(' - ');
+      if (dashIdx > 0) t = t.substring(0, dashIdx);
+      return t.trim();
+    }
+
     const jobs = records.map(record => {
       const description = record.fields['Final Job Description'] || record.fields['Description'] || record.fields['Job Description'] || '';
       const parsed = parseJobDescription(description);
 
+      // Use dedicated Job Title field if present; otherwise extract from Request Name
+      const rawTitle = record.fields['Job Title'] || record.fields['Name'] || parsed.extractedTitle || '';
+      const requestName = record.fields['Request Name'] || record.fields['Hiring Request Name'] || record.fields['Request'] || '';
+      const title = rawTitle ? cleanTitle(rawTitle) : cleanTitle(requestName) || 'Untitled';
+
       return {
         id: record.id,
-        title: record.fields['Job Title'] || record.fields['Name'] || parsed.extractedTitle || 'Untitled',
+        title,
         jobCode: record.fields['Job Code'] || record.fields['Code'] || '',
         requestId: record.fields['Request ID'] || record.fields['Req ID'] || record.fields['ID'] || '',
-        requestName: record.fields['Request Name'] || record.fields['Hiring Request Name'] || record.fields['Request'] || '',
+        requestName,
         hrNumber: (() => { const m = (record.fields['Request Name'] || '').match(/\[?(HR\d+)\]?/i); return m ? m[1] : ''; })(),
         salary: record.fields['Salary'] || record.fields['Salary Range'] || parsed.salary || '',
         location: record.fields['Location'] || parsed.location || 'Remote',
