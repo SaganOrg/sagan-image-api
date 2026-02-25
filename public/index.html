@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sagan Image Generator</title>
-  <link rel="stylesheet" href="styles.css?v=32">
+  <link rel="stylesheet" href="styles.css?v=33">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
@@ -544,7 +544,7 @@
           <h3 id="templatePreviewTitle">Template Preview</h3>
           <button class="modal-close" onclick="closeTemplatePreview()">&times;</button>
         </div>
-        <div class="template-preview-modal-body">
+        <div class="template-preview-modal-body" style="overflow-y:auto;max-height:65vh;padding:16px 24px;">
           <div id="templatePreviewSpinner" class="loading" style="padding:60px 0;"><div class="spinner"></div><p>Loading preview...</p></div>
           <img id="templatePreviewImg" alt="Template Preview" style="width:100%;border-radius:12px;display:none;">
         </div>
