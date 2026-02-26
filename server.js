@@ -235,34 +235,44 @@ const AIRTABLE_TABLE_NAME = process.env.AIRTABLE_TABLE_NAME || 'Hiring Requests'
 app.get('/api/airtable/jobs', async (req, res) => {
   try {
     if (!AIRTABLE_API_KEY || !AIRTABLE_BASE_ID) {
-      // Return empty array if Airtable is not configured
       console.log('Airtable not configured, returning empty jobs');
       return res.json({ jobs: [], message: 'Airtable not configured' });
     }
 
-    // Fetch all records, sorted by newest first (using Airtable's internal created time)
     const AIRTABLE_VIEW = process.env.AIRTABLE_VIEW || '';
     const viewParam = AIRTABLE_VIEW ? `&view=${encodeURIComponent(AIRTABLE_VIEW)}` : '';
-    const airtableUrl = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(AIRTABLE_TABLE_NAME)}?pageSize=50${viewParam}`;
-    console.log('Fetching Airtable:', airtableUrl);
+    const baseUrl = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(AIRTABLE_TABLE_NAME)}?pageSize=100${viewParam}`;
 
-    const response = await fetch(airtableUrl, {
-      headers: {
-        'Authorization': `Bearer ${AIRTABLE_API_KEY}`,
-        'Content-Type': 'application/json'
+    // Fetch ALL pages from Airtable (pagination via offset)
+    let allRecords = [];
+    let offset = null;
+    let pageNum = 0;
+
+    do {
+      pageNum++;
+      const url = offset ? `${baseUrl}&offset=${offset}` : baseUrl;
+      console.log(`Fetching Airtable page ${pageNum}:`, url);
+
+      const response = await fetch(url, {
+        headers: { 'Authorization': `Bearer ${AIRTABLE_API_KEY}`, 'Content-Type': 'application/json' }
+      });
+
+      if (!response.ok) {
+        const errBody = await response.text();
+        console.error('Airtable error response:', response.status, errBody);
+        throw new Error(`Airtable API error: ${response.status} - ${errBody}`);
       }
-    });
 
-    if (!response.ok) {
-      const errBody = await response.text();
-      console.error('Airtable error response:', response.status, errBody);
-      throw new Error(`Airtable API error: ${response.status} - ${errBody}`);
-    }
+      const data = await response.json();
+      allRecords = allRecords.concat(data.records);
+      offset = data.offset || null;
 
-    const data = await response.json();
+    } while (offset);
 
-    // Reverse to show newest first (Airtable returns oldest first by default)
-    const records = data.records.reverse();
+    console.log(`Airtable: fetched ${allRecords.length} total records across ${pageNum} page(s)`);
+
+    // Reverse to show newest first
+    const records = allRecords.reverse();
 
     // Clean Request Name format: "[Replacement] Job Title - Company - Person [HR12345]"
     // → returns just "Job Title"
