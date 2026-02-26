@@ -20,7 +20,13 @@ app.use(express.static(path.join(__dirname, 'public'), {
 app.get('/api/config', (req, res) => {
   res.json({
     supabaseUrl: process.env.SUPABASE_URL || '',
-    supabaseAnonKey: process.env.SUPABASE_ANON_KEY || ''
+    supabaseAnonKey: process.env.SUPABASE_ANON_KEY || '',
+    airtable: {
+      baseId: AIRTABLE_BASE_ID || '(not set)',
+      tableName: AIRTABLE_TABLE_NAME || '(not set)',
+      view: process.env.AIRTABLE_VIEW || '(none — all records)',
+      configured: !!(AIRTABLE_API_KEY && AIRTABLE_BASE_ID)
+    }
   });
 });
 
