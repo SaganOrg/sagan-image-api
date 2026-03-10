@@ -1560,17 +1560,17 @@ Use all required placeholder variables. Return ONLY the complete HTML.`;
     const claudeData = await claudeResponse.json();
     let generatedHtml = claudeData.content[0].text;
 
-    // Strip markdown code block markers robustly
+    // Extract HTML — handle preamble text before ```html block
     generatedHtml = generatedHtml.trim();
-    if (generatedHtml.startsWith('```html')) {
-      generatedHtml = generatedHtml.slice(7);
-    } else if (generatedHtml.startsWith('```')) {
-      generatedHtml = generatedHtml.slice(3);
+    const codeBlockMatch = generatedHtml.match(/```(?:html)?\s*([\s\S]*?)```/);
+    if (codeBlockMatch) {
+      generatedHtml = codeBlockMatch[1].trim();
+    } else {
+      // No code block — find the first < to strip any leading prose
+      const firstTag = generatedHtml.indexOf('<');
+      if (firstTag > 0) generatedHtml = generatedHtml.slice(firstTag);
+      generatedHtml = generatedHtml.trim();
     }
-    if (generatedHtml.endsWith('```')) {
-      generatedHtml = generatedHtml.slice(0, -3);
-    }
-    generatedHtml = generatedHtml.trim();
 
     // Save the generated template to disk
     // Validate required placeholders — only for NEW templates, not modify mode
