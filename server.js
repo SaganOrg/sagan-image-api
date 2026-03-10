@@ -3,6 +3,72 @@ const { chromium } = require('playwright');
 const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
+const { createClient } = require('@supabase/supabase-js');
+
+// Supabase admin client (service role — server only)
+const supabaseAdmin = (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_KEY)
+  ? createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY)
+  : null;
+
+const AI_TEMPLATES_BUCKET = 'ai-templates';
+
+// Save AI template HTML to Supabase Storage
+async function saveTemplateToSupabase(templateId, html) {
+  if (!supabaseAdmin) return;
+  try {
+    const { error } = await supabaseAdmin.storage
+      .from(AI_TEMPLATES_BUCKET)
+      .upload(`${templateId}.html`, Buffer.from(html, 'utf8'), {
+        contentType: 'text/html',
+        upsert: true
+      });
+    if (error) console.warn('Supabase template save failed:', error.message);
+    else console.log(`Template backed up to Supabase: ${templateId}.html`);
+  } catch (e) {
+    console.warn('Supabase template save error:', e.message);
+  }
+}
+
+// Ensure ai-templates bucket exists
+async function ensureBucket() {
+  if (!supabaseAdmin) return;
+  try {
+    const { data: buckets } = await supabaseAdmin.storage.listBuckets();
+    const exists = buckets?.some(b => b.name === AI_TEMPLATES_BUCKET);
+    if (!exists) {
+      await supabaseAdmin.storage.createBucket(AI_TEMPLATES_BUCKET, { public: false });
+      console.log(`Created Supabase bucket: ${AI_TEMPLATES_BUCKET}`);
+    }
+  } catch (e) {
+    console.warn('Bucket check error:', e.message);
+  }
+}
+
+// On startup: restore AI templates from Supabase Storage to local templates/ folder
+async function restoreTemplatesFromSupabase() {
+  if (!supabaseAdmin) return;
+  try {
+    const { data, error } = await supabaseAdmin.storage.from(AI_TEMPLATES_BUCKET).list('', { limit: 500 });
+    if (error || !data) return;
+    const templatesPath = path.join(__dirname, 'templates');
+    let restored = 0;
+    for (const file of data) {
+      if (!file.name.endsWith('.html')) continue;
+      const localPath = path.join(templatesPath, file.name);
+      if (fs.existsSync(localPath)) continue; // already there
+      const { data: fileData, error: dlError } = await supabaseAdmin.storage
+        .from(AI_TEMPLATES_BUCKET)
+        .download(file.name);
+      if (dlError || !fileData) continue;
+      const text = await fileData.text();
+      fs.writeFileSync(localPath, text, 'utf8');
+      restored++;
+    }
+    if (restored > 0) console.log(`Restored ${restored} AI templates from Supabase`);
+  } catch (e) {
+    console.warn('Template restore error:', e.message);
+  }
+}
 
 const app = express();
 app.use(cors());
@@ -1525,6 +1591,7 @@ Use all required placeholder variables. Return ONLY the complete HTML.`;
     const savePath = path.join(__dirname, 'templates', `${safeTemplateName}.html`);
     fs.writeFileSync(savePath, generatedHtml, 'utf8');
     console.log(`AI template saved: ${safeTemplateName}.html`);
+    await saveTemplateToSupabase(safeTemplateName, generatedHtml);
 
     res.json({
       success: true,
@@ -1935,7 +2002,9 @@ app.get('/api/info', (req, res) => {
 // Serve frontend for root (index.html will be served by static middleware)
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
+  await ensureBucket();
+  await restoreTemplatesFromSupabase();
   console.log(`
 ====================================
   Sagan Image Generator v3.0
