@@ -151,23 +151,36 @@ function parseJobDescription(description) {
     result.extractedTitle = titleMatch[1].trim();
   }
 
-  // Extract Responsibilities
-  const respMatch = description.match(/(?:Key\s*)?Responsibilities[:\s]*\n?([\s\S]*?)(?=\n\s*(?:Qualifications|Requirements|Skills|Education|About|Benefits|Compensation|$))/i);
+  // Section end markers — anything that signals a new section heading
+  const SECTION_END = 'Nice[\\s\\-]?to[\\s\\-]?Have|Bonus|Preferred|Benefits|Compensation|How to Apply|About\\s|Position Overview|Equal Opportunity';
+
+  // Extract Responsibilities — handles with/without colon, with/without bullets
+  const respMatch = description.match(
+    new RegExp(
+      '(?:Key\\s*)?Responsibilities[:\\s]*\\n?([\\s\\S]*?)(?=\\n\\s*(?:Qualifications|Key Qualifications|Required Qualifications|Requirements|Skills|Education|' + SECTION_END + ')|$)',
+      'i'
+    )
+  );
   if (respMatch) {
     result.responsibilities = respMatch[1]
       .split('\n')
-      .map(line => line.replace(/^[\s•\-\*\d.]+/, '').trim())
-      .filter(line => line.length > 5)
+      .map(line => line.replace(/^[\s•\-\*\d.►▸→]+/, '').trim())
+      .filter(line => line.length > 5 && !/^(key\s)?responsibilities$/i.test(line))
       .slice(0, 5);
   }
 
-  // Extract Qualifications
-  const qualMatch = description.match(/(?:Key\s*)?(?:Qualifications|Requirements)[:\s]*\n?([\s\S]*?)(?=\n\s*(?:Responsibilities|About|Benefits|Compensation|How to|$))/i);
+  // Extract Qualifications — handles with/without colon, with/without bullets, plain sentences
+  const qualMatch = description.match(
+    new RegExp(
+      '(?:Key\\s*|Required\\s*|Minimum\\s*)?(?:Qualifications|Requirements)[:\\s]*\\n?([\\s\\S]*?)(?=\\n\\s*(?:' + SECTION_END + ')|$)',
+      'i'
+    )
+  );
   if (qualMatch) {
     result.qualifications = qualMatch[1]
       .split('\n')
-      .map(line => line.replace(/^[\s•\-\*\d.]+/, '').trim())
-      .filter(line => line.length > 5)
+      .map(line => line.replace(/^[\s•\-\*\d.►▸→]+/, '').trim())
+      .filter(line => line.length > 5 && !/^(key\s|required\s|minimum\s)?(?:qualifications|requirements)$/i.test(line))
       .slice(0, 5);
   }
 
