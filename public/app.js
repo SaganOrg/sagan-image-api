@@ -777,21 +777,36 @@ function syncTemplateDropdown(templates, aiOutputTypeMap = {}) {
   const coverSelect = document.getElementById('carouselCoverSelect');
   const slideSelect = document.getElementById('carouselDetailSelect');
 
+  const validIds = new Set(templates.map(t => t.id));
+
+  // Remove stale AI template options no longer on server
+  [singleSelect, coverSelect, slideSelect].forEach(sel => {
+    if (!sel) return;
+    Array.from(sel.options).forEach(opt => {
+      if (opt.value.startsWith('ai-') && !validIds.has(opt.value)) {
+        opt.remove();
+      }
+    });
+  });
+
+  // If current state.template was removed, reset to first valid option
+  if (state.template && state.template.startsWith('ai-') && !validIds.has(state.template)) {
+    state.template = singleSelect?.options[0]?.value || 'catalog-1';
+    if (singleSelect) singleSelect.value = state.template;
+  }
+
   templates.forEach(t => {
     const outputType = aiOutputTypeMap[t.id];
 
     if (outputType === 'carousel-cover' || CAROUSEL_COVER_IDS.has(t.id)) {
-      // Add to cover select only
       if (coverSelect && !Array.from(coverSelect.options).some(o => o.value === t.id)) {
         coverSelect.add(new Option(`${t.name} (AI)`, t.id));
       }
     } else if (outputType === 'carousel-slide') {
-      // Add to slide select only
       if (slideSelect && !Array.from(slideSelect.options).some(o => o.value === t.id)) {
         slideSelect.add(new Option(`${t.name} (AI)`, t.id));
       }
     } else if (!CAROUSEL_TEMPLATE_IDS.has(t.id) && !MULTI_JOB_IDS.has(t.id)) {
-      // Single template — add to single select AND slide select
       if (singleSelect && !Array.from(singleSelect.options).some(o => o.value === t.id)) {
         singleSelect.add(new Option(t.name, t.id));
       }
