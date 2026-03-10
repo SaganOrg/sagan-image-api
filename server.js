@@ -1573,18 +1573,20 @@ Use all required placeholder variables. Return ONLY the complete HTML.`;
     generatedHtml = generatedHtml.trim();
 
     // Save the generated template to disk
-    // Validate required placeholders are present in generated HTML
-    const REQUIRED_PLACEHOLDERS = [
-      '{{jobTitle}}', '{{salary}}', '{{location}}', '{{schedule}}',
-      '{{responsibilities}}', '{{qualifications}}', '{{logoBase64}}'
-    ];
-    const missingPlaceholders = REQUIRED_PLACEHOLDERS.filter(p => !generatedHtml.includes(p));
-    if (missingPlaceholders.length > 0) {
-      console.warn(`AI template missing placeholders: ${missingPlaceholders.join(', ')}`);
-      return res.status(422).json({
-        error: `The AI forgot to include required placeholders: ${missingPlaceholders.join(', ')}. Please try generating again.`,
-        missingPlaceholders
-      });
+    // Validate required placeholders — only for NEW templates, not modify mode
+    if (!isModifyMode) {
+      const REQUIRED_PLACEHOLDERS = [
+        '{{jobTitle}}', '{{salary}}', '{{location}}', '{{schedule}}',
+        '{{responsibilities}}', '{{qualifications}}', '{{logoBase64}}'
+      ];
+      const missingPlaceholders = REQUIRED_PLACEHOLDERS.filter(p => !generatedHtml.includes(p));
+      if (missingPlaceholders.length > 0) {
+        console.warn(`AI template missing placeholders: ${missingPlaceholders.join(', ')}`);
+        return res.status(422).json({
+          error: `The AI forgot to include required placeholders: ${missingPlaceholders.join(', ')}. Please try generating again.`,
+          missingPlaceholders
+        });
+      }
     }
 
     const safeTemplateName = templateName.replace(/[^a-z0-9-]/gi, '-').toLowerCase() || 'ai-custom';
