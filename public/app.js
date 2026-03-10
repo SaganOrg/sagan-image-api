@@ -1492,11 +1492,15 @@ async function generateAITemplate() {
   const previewWrap = document.getElementById('aiTemplatePreviewWrap');
   previewWrap.innerHTML = `<div class="loading" style="padding:80px 24px;"><div class="spinner"></div><p>${isModify ? 'AI is modifying your template...' : 'AI is creating your template...'}</p></div>`;
 
-  // If none dots selected in modify mode, append removal instruction to Claude
+  // Build final modification request — append dot/logo instructions for AI
   let finalModReq = modReqText;
   if (isModify && _modifyDotStyle === 'none') {
     const dotRemoval = 'Remove all decorative dot and circle elements from the design completely (set their display to none or delete them from the HTML).';
     finalModReq = finalModReq ? `${finalModReq}. ${dotRemoval}` : dotRemoval;
+  }
+  // Ensure there's always a non-empty modificationRequest in modify mode
+  if (isModify && !finalModReq) {
+    finalModReq = 'Apply the logo and dot color changes specified. Keep the design otherwise identical.';
   }
 
   const requestBody = isModify

@@ -1485,15 +1485,16 @@ Return ONLY the complete HTML. No explanation. No markdown fences.`;
       const baseHtml = fs.readFileSync(basePath, 'utf8');
 
       finalSystemPrompt = `You are an expert HTML/CSS editor for Sagan Recruitment templates.
-You will receive an existing 1080x1080px LinkedIn job posting HTML template and specific modification instructions.
+You will receive an existing 1080x1080px LinkedIn job posting HTML template and a modification request.
+Your job is to apply EXACTLY the requested changes and return the updated HTML.
 
-CRITICAL RULES — follow these without exception:
-1. Make ONLY the changes that are explicitly requested. Keep EVERYTHING else identical.
-2. Do NOT change colors, layout, spacing, fonts, or structure unless the modification request explicitly asks for it.
-3. Preserve ALL template placeholder variables exactly as they are: {{fontPPMoriSemiBold}}, {{fontPPMoriRegular}}, {{fontPPNeueMontreal}}, {{logoBase64}}, {{jobTitle}}, {{salary}}, {{location}}, {{schedule}}, {{jobCode}}, {{responsibilities}}, {{qualifications}}, {{dot1Color}} through {{dot5Color}}.
-4. Return ONLY the complete modified HTML file, no explanation, no markdown fences.`;
+RULES:
+1. APPLY every change in the modification request — do not skip or ignore any instruction.
+2. Keep everything NOT mentioned in the request identical (same structure, colors, spacing, fonts).
+3. Preserve ALL template placeholder variables exactly: {{fontPPMoriSemiBold}}, {{fontPPMoriRegular}}, {{fontPPNeueMontreal}}, {{logoBase64}}, {{jobTitle}}, {{salary}}, {{location}}, {{schedule}}, {{jobCode}}, {{responsibilities}}, {{qualifications}}, {{dot1Color}} through {{dot5Color}}.
+4. Output ONLY the complete HTML. No explanation text, no markdown code fences, no comments before or after.`;
 
-      userMessage = `Here is the original template HTML:\n\`\`\`html\n${baseHtml}\n\`\`\`\n\nModification request: ${modificationRequest}`;
+      userMessage = `MODIFICATION REQUEST: ${modificationRequest}\n\nApply the above changes to this template HTML:\n\`\`\`html\n${baseHtml}\n\`\`\``;
     } else {
       // Keyword hints from user prompt
       const p = (prompt || '').toLowerCase();
